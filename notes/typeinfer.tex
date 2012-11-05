@@ -1,0 +1,278 @@
+\documentclass[paper=screen,mode=present,style=zysimple]{powerdot}
+
+\usepackage{fancyvrb,verbatim,listings}
+\usepackage{proof}
+\usepackage[all]{xypic,xy}
+
+\input{macros}
+
+\pdsetup{lf={Theory and Practice of Functional Programming}}
+
+\title{{\small \textsc{Theory and Practice of Functional Programming}}
+\\[12pt]
+{\Large \color{TitleColor} Type Inference}
+}
+\author{\small \textbf{Dr. ZHANG Yu}
+  \\[2pt] \small Institute of Software, Chinese Academy of Sciences 
+  \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  \qquad \qquad 
+  \includegraphics[height=.04\slideheight]{cas.eps}
+}
+\date{\scriptsize Fall term, 2012 \qquad GUCAS, Beijing}
+
+\newcommand{\RED}{\mathsf{RED}}
+
+\begin{document}
+
+\maketitle 
+
+\begin{slide}[method=direct]{Principal types}
+\begin{itemize}
+\item A few type judgements:
+\begin{smalltext}
+\begin{eqnarray*} 
+&& 
+\vdash \lambda x : \tnat \ldot \lambda y : \tnat \to \tnat \ldot y x : 
+\emblue{\tnat} \to (\emgreen{\tnat \to \tnat}) \to \empurple{\tnat}
+\\ && 
+\vdash \lambda x : \tbool \ldot \lambda y : \tbool \to \tnat \ldot y x : 
+\emblue{\tbool} \to (\emgreen{\tbool \to \tnat}) \to \empurple{\tnat}
+\\ && 
+\vdash \lambda x : (\tnat \to \tbool) \ldot \lambda y : (\tnat \to \tbool) \to \tbool \to \tbool \ldot y x : 
+\\ && \qquad
+(\emblue{\tnat \to \tbool}) \to (\emgreen{(\tnat \to \tbool) \to \tbool \to \tbool}) \to \empurple{\tbool \to \tbool}
+\end{eqnarray*}
+\end{smalltext}
+All types above are of the pattern $\emblue{X} \to (\emgreen{X \to Y}) \to \empurple{Y}$.
+\item In Haskell, the system will give the following type to the term $\lambda x \ldot \lambda y \ldot y x$:
+  %% # fun x -> fun y -> y x ;;
+  %% - : 'a -> ('a -> 'b) -> 'b = <fun>
+\vspace*{-1.8em}
+\begin{smalltext}
+\begin{verbatim}
+    Prelude> :t \x -> \y -> y x
+    \x -> \y -> y x :: t1 -> (t1 -> t) -> t
+\end{verbatim}
+\end{smalltext}
+\item $X \to (X \to Y) \to Y$ is the most general type (or the \emblue{principal type}) for the term 
+$\lambda x \ldot \lambda y \ldot y x$.
+\\
+Every typable lambda term in the simply typed lambda calculus has a principal type.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Type templates}
+\begin{itemize}
+\item A \emblue{type template} is a simple type, built from \emblue{type variables} and possibly base types.
+\[
+T, S, \ldots ::= X \mid b \mid T \to S \mid T \times S \mid T + S
+\]
+where $X$ is type variable, $b$ ranges over a set of type constants.
+\item A \emblue{type substitution} is a function from type variables to type templates: 
+\vspace*{-0.5em}
+  $$[X_1 \mapsto T_1, \ldots, X_n \mapsto T_n]  \vspace*{-0.5em}$$
+We define the template $\sigma(T)$, obtained by applying the substitution $\sigma$ to templpate $T$, 
+as follows:
+\begin{smalltext}
+\vspace*{-0.5em}
+\begin{eqnarray*}
+\sigma(X) & = & T, \mbox{ if $X \mapsto T \in \sigma$}
+\\
+\sigma (b) & = & b
+\\
+\sigma (T \to S) & = & \sigma(T) \to \sigma(S) 
+\\
+\sigma (T \times S) & = & \sigma(T) \times \sigma(S) 
+\\[-2em]
+\end{eqnarray*}
+\end{smalltext}
+A template $T$ is \emblue{more general} than $S$ if there exists a substitution $\sigma$ 
+such that $\sigma(T) = S$, or $S$ instantiates $T$.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Unification}
+\begin{itemize}
+\item Given an equation between type templates, a \emblue{unifier} is a type substitution
+  that solves the equation. 
+\begin{itemize}\small
+\item $X \to (X \to Y) = (Y \to Z) \to W$ has a solution 
+\[
+\sigma = [ X \mapsto Y \to Z, W \mapsto (Y \to Z) \to Y ]
+\vspace*{-1.5em}
+\]
+\item The equation $X \times (X \to Z) = (Z \to Y) \times Y$ does not have any solution.
+\end{itemize}
+\item A unifier of two sequences of type templates $\tilde{T} = T_1, \ldots , T_n$ and 
+  $\tilde S = S_1, \ldots , S_n$, is a type substitution $\sigma$ s.t. 
+  $\sigma(T_i) = \sigma(S_i)$ for all $i$.
+\item A types substitution is a \emblue{most general unifier} of $T = S$ if it is a unifier 
+and it is more general than any other unifier of $T =S$. \\
+\begin{itemize} \small
+\item A type substitution $\sigma$ is {\em more general} than $\sigma'$ if there exists another 
+substitution $\rho$ such that $\rho \circ \sigma = \sigma'$.
+\item Let $\sigma = [X_1 \mapsto T_1, \ldots , X_n \mapsto T_n]$. 
+\emblue{$$\rho \circ \sigma = [X_1 \mapsto \rho(T_1), \ldots, X_n \mapsto \rho (T_n)] $$}
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{The unification algorithm}
+\begin{itemize}
+\item \emblue{Unification} is the process of determining a most general unifier.
+\vspace*{-0.5em}
+\begin{itemize}\small
+\item Input: two sequences of type templates $\tilde T$ and $\tilde S$.
+\item Output: a most general unifier $\sigma$ if it exists.
+\vspace*{-1em}
+\end{itemize}
+\item The most general unification algorithm \emred{$MGU$}:
+\vspace*{-0.5em}
+\begin{itemize}\small
+\item $MGU(T; T) = \mathrm{id}$, if $T$ is a variable or a base type;
+\item $MGU(X; S) = [ X \mapsto S ]$, if \empink{$X$ does not occur in $S$};
+\item $MGU(T; Y) = [ Y \mapsto T ]$, if \empink{$Y$ does not occur in $T$};
+\item $MGU(T_1 \to T_2; S_1 \to S_2) = MGU (T_1, T_2; S_1, S_2)$;
+\item $MGU(T_1 \times T_2; S_1 \times S_2) = MGU (T_1, T_2; S_1, S_2)$;
+\item $MGU(T_1 + T_2; S_1 + S_2) = MGU (T_1, T_2; S_1, S_2)$;
+\item $MGU(T; S)$ fails in all other cases;
+\item $MGU(T, \tilde T; S, \tilde S) = \sigma' \circ \sigma$, where $\sigma = MGU(\tilde T; \tilde S)$ 
+  and $\sigma' = MGU(\sigma(T); \sigma(S))$.
+\vspace*{-0.5em}
+\end{itemize}
+\item If $MGU(\tilde T; \tilde S) = \sigma$, then $\sigma$ is a most general unifier of $\tilde T$ 
+  and $\tilde S$.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{The type inference algorithm}
+The type inference algorithm $TI$: \emblue{$TI(\Gamma \vdash e: {T})$} is a most general substitution $\sigma$ 
+such that \emred{$\sigma(\Gamma) \vdash e : \sigma(T)$ holds} ($TI$ fails if no such $\sigma$).
+\vspace*{-0.5em}
+\begin{itemize}\small
+\item[--] $TI(x_1 : T_1, \ldots , x_n : T_n \vdash x_i : T) = MGU(T_i; T)$. \vspace*{-0.5em}
+\item[--] $TI(\Gamma \vdash e_1 + e_2 : T) = \sigma_2 \circ \sigma_1 \circ \sigma$, where \\
+  \begin{minipage}{.5\textwidth}
+  \begin{itemize}
+  \item $\sigma = MGU(\tnat; T)$
+  \item $\sigma_1 = TI(\sigma(\Gamma) \vdash e_1 : \tnat)$
+  \item $\sigma_2 = TI(\sigma_1 \circ \sigma(\Gamma) \vdash e_1 : \tnat)$
+  \end{itemize}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{.3\textwidth}
+    $$\prooftree \Gamma \vdash e_1 : \tnat \quad \Gamma \vdash e_2: \tnat \justifies 
+    \Gamma \vdash e_1 + e_2 : \tnat \endprooftree$$
+  \end{minipage} 
+  \vspace*{-1em}
+\item[--] $TI(\Gamma \vdash e_1 e_2 : T) = \sigma_2 \circ \sigma_1$, where \\
+  \begin{minipage}{.5\textwidth}
+  \begin{itemize}
+  \item $\sigma_1 = TI(\Gamma \vdash e_1 : X \to T)$
+  \item $\sigma_2 = TI(\emblue{\sigma_1(\Gamma)} \vdash e_2 : \emblue{\sigma_1(X)})$ 
+  \item $X$ is a fresh type variable
+  \end{itemize}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{.3\textwidth}
+    $$\prooftree \Gamma \vdash e_1 : \tau \to \tau' \quad \Gamma \vdash e_2: \tau \justifies 
+    \Gamma \vdash e_1 \ e_2 : \tau' \endprooftree$$ 
+  \end{minipage}
+  \vspace*{-1em}
+\item[--] $TI(\Gamma \vdash \lambda x: S \ldot e : T) = \sigma_2 \circ \sigma_1$,  where \\
+  \begin{minipage}{.6\textwidth}
+  \begin{itemize}
+  \item $\sigma_1 = MGU(T; S \to X)$
+  \item $\sigma_2 = TI(\sigma_1(\Gamma), x: \sigma_1(S) \vdash e : \sigma_1(X))$
+  \item $X$ is a fresh variable
+  \end{itemize}
+  \end{minipage}
+  \hfill
+  \begin{minipage}{.3\textwidth}
+    $$\prooftree \Gamma, x : \tau \vdash e : \tau' 
+    \justifies \Gamma \vdash \lambda x \ldot e : \tau \to \tau' \endprooftree$$
+  \end{minipage}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{The type inference algorithm}
+\begin{itemize}\small
+\item[--] $TI(\Gamma \vdash \cpair{e_1, e_2} : T) = \sigma_2 \circ \sigma_1 \circ \sigma$, where 
+  \begin{minipage}{.5\textwidth}
+  \begin{itemize}
+  \item $\sigma = MGU(T; X \times Y)$
+  \item $\sigma_1 = TI(\sigma(\Gamma) \vdash e_1 : \sigma(X))$
+  \item $\sigma_2 = TI(\sigma_1 \circ \sigma (\Gamma) \vdash e_2 : \sigma_1 \circ \sigma(Y))$ 
+  \item  $X, Y$ are fresh type variables
+  \end{itemize}
+  \end{minipage}
+  \begin{minipage}{.3\textwidth}
+    $$\prooftree \Gamma \vdash e_1 : \tau_1 \quad \Gamma \vdash e_2 : \tau_2
+    \justifies \Gamma \vdash \cpair{e_1, e_2} : \tau_1 \times \tau_2 \endprooftree$$
+  \end{minipage}
+  \vspace*{-1em}
+\item[--] $TI(\Gamma \vdash \cproj_1 e : T) = TI(\Gamma \vdash e : T \times X)$, where 
+  \begin{minipage}{.5\textwidth}
+  \begin{itemize}
+  \item $X$ is a fresh type variable
+  \item $TI(\Gamma \vdash \cproj_2 e : T)$ is similar.
+  \end{itemize}
+  \end{minipage}
+  \begin{minipage}{.3\textwidth}
+    $$\prooftree \Gamma \vdash e : \tau_1 \times \tau_2
+    \justifies \Gamma \vdash \cproj_i \ e : \tau_i \endprooftree$$
+  \end{minipage}
+  \vspace*{-1em}
+\item[--] $TI(\Gamma \vdash \cinj_1 e : T) = TI(\Gamma \vdash e : T \times X)$, where 
+  \begin{minipage}{.5\textwidth}
+  \begin{itemize}
+  \item $\sigma = MGU(X + Y; T)$ 
+  \item $\sigma_1 = TI(\sigma{\Gamma} \vdash e : X$
+  \item $X, Y$ is a fresh type variable
+  \item $TI(\Gamma \vdash \cinj_2 e : T)$ is similar.
+  \end{itemize}
+  \end{minipage}
+  \begin{minipage}{.3\textwidth}
+    $$\prooftree \Gamma \vdash e : \tau_i
+    \justifies \Gamma \vdash \cinj_i \ e : \tau_1 + \tau_2 \endprooftree$$
+  \end{minipage}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{The type inference algorithm}
+\begin{itemize}\small
+\item[--] $TI(\Gamma \vdash \mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 : T) = \sigma_2 \circ \sigma_1 \circ \sigma$, where 
+  \begin{itemize}
+  \item $\sigma = TI(\Gamma \vdash e :X + Y)$
+  \item $\sigma_1 = TI(\sigma(\Gamma), x_1 : \sigma(X) \vdash e_1 : \sigma(T))$
+  \item $\sigma_2 = TI(\sigma_1 \circ \sigma (\Gamma), x_2 : \sigma_1 \circ \sigma (Y) \vdash e_2 : \sigma_1 \circ \sigma(Y))$ 
+  \item  $X, Y$ are fresh type variables
+  \end{itemize}
+$$
+\prooftree
+\Gamma, x_1 : \tau_1 \vdash e_1 : \tau 
+\quad 
+\Gamma, x_2 : \tau_2 \vdash e_2 : \tau 
+\quad 
+\Gamma \vdash e : \tau_1 + \tau_2
+\justifies
+\Gamma \vdash 
+\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 : \tau
+\endprooftree
+$$
+\item[--] $TI(\Gamma \vdash \cfix e : T) = TI(\Gamma \vdash e : T \to T)$.
+$$
+  \prooftree \Gamma \vdash e : \tau \to \tau 
+  \justifies \Gamma \vdash \cfix \ e : \tau \endprooftree
+$$
+\end{itemize}
+%% \item $TI(\Gamma \vdash e : T)$ returns a most general substitution $\sigma$ such that
+%%   $\sigma(\Gamma) \vdash e : \sigma(T)$ holds. It fails if no such substitution exists.
+In real applications, type inference only takes two arguments $\Gamma$ and $e$, 
+and we do inference by $TI(\Gamma \vdash e : \emred{X})$, with $X$ a fresh type variable.
+\end{slide}
+
+
+\end{document}
+ 
+

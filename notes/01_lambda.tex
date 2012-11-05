@@ -1,0 +1,548 @@
+\documentclass[paper=screen,mode=present,style=zysimple]{powerdot}
+
+\usepackage{fancyvrb,verbatim,listings}
+\usepackage{proof}
+\usepackage[all]{xypic,xy}
+
+\input{macros}
+
+\pdsetup{lf={Theorey and Practice of Functional Programming}}
+
+\title{{\small \textsc{Theory and Practice of Functional Programming}}
+\\[12pt]
+{\Large \color{TitleColor} Lambda-Calculus}
+}
+\author{\small \textbf{Dr. ZHANG Yu}
+  \\[2pt] \small Institute of Software, Chinese Academy of Sciences 
+  \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  \qquad \qquad 
+  \includegraphics[height=.04\slideheight]{cas.eps}
+}
+\date{\scriptsize GUCAS, Beijing}
+
+\newcommand{\RED}{\mathsf{RED}}
+
+\begin{document}
+
+\maketitle 
+
+%% \section{}
+
+\begin{slide}{The untyped $\lambda$-calculus}
+$\lambda$-calculus is the fundamental model for programming languages. 
+It itself is seen as a language that is built on very simple syntax, yet has powerful computing capability. 
+\begin{itemize}
+\item In $\lambda$-calculus, the basic units are \emblue{expressions} or \emblue{terms}.
+\begin{wrap}\vspace*{-0.5em}
+\[
+\emblue{e, e', \ldots :: = x \mid \lambda x \ldot e \mid e \, e'}
+\vspace*{-1em}
+\]
+\end{wrap}
+where $x$ ranges over an infinite set of variables.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{The untyped $\lambda$-calculus}
+\begin{itemize}
+\item \emred{Abstraction}: $\lambda x . e$ --- a function where $x$ is the argument and $e$ is the function body.
+\begin{itemize}
+\item The variable $x$ is \emblue{bound} in the expression.  
+\item \Example ($\lambda$-abstractions) 
+\[
+\begin{array}{l@{\quad}l}
+\lambda x \ldot x + 1 & \mbox{the increment function} \\[0.2em]
+\lambda x . \lambda y \ldot x + y & \mbox{the addition} \\[0.2em]
+\lambda f . \lambda g . \lambda x \ldot f (g \, x) & \mbox{function composition} 
+\end{array}
+\]
+\empurple{We shall see how to program ``+'' and numerals later.}
+\item The scope of $\lambda$ extends as far as possible to the right, e.g., $\lambda x \ldot e \, e'$ is 
+actually $\lambda x \ldot (e \, e')$. 
+\item We also  write $\lambda x \ldot \lambda y \ldot e$ as $\lambda x y \ldot e$.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{The untyped $\lambda$-calculus}
+\begin{itemize}
+\item \emred{Application}: $e \, e'$ --- compute function $e$ with the (concrete) argument $e'$, 
+  or apply function $e$ to the argument $e'$.
+\[
+\begin{array}{l}
+(\lambda x \ldot x + 1) \, 2 \\[0.2em]
+(\lambda x . \lambda y \ldot x + y) \, 1 \\[0.2em]
+(\lambda f . \lambda g . \lambda x \ldot f (g \, x)) \, (\lambda x \ldot x + 1) \, (\lambda x \ldot x * 2)
+\end{array}
+\]
+\begin{itemize}
+\item Applications are left-associative, i.e., $e_1 \, e_2 \, e_3$ stands for $(e_1 \, e_2) \, e_3$.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}[method=direct]{Free and bound variables}
+\begin{itemize}
+\item \emblue{Bound variables}: variables that are attached to $\lambda$ are {\em bound} variables 
+--- $\lambda$ is a binder. 
+\\
+Bound variables in other systems: \vspace*{-0.5em}
+\[
+\begin{array}{c}
+\lim_{x \to \infty} e^{-x} \\[0.3em]
+\int_0^2 x^2 \, dx \\[0.3em]
+\forall x, y, z: x \geq y \wedge y \geq z \Rightarrow x \geq z \\[0.3em]
+\verb|int succ (x : int) { return x+1 ; }| 
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Free and bound variables}
+\begin{itemize}
+\item \emblue{Free variables}: all those are not bound. We write $FV(e)$ for the set of free variables 
+  of expression $e$.
+\begin{wrap}
+\vspace*{-0.5em}
+\begin{eqnarray*}
+FV(x) & = & \set{x} \\
+FV(e \ e') & = & FV(e) \cup FV(e') \\
+FV(\lambda x \ldot e) & = & FV(e) \setminus \set{x} \\[-2em]
+\end{eqnarray*}
+\end{wrap}
+\Example (Free variables of $\lambda$-expressions) 
+\[
+\begin{array}{l}
+FV(\lambda x \ldot x \, x) = \mbox{?} \\
+FV((\lambda x \ldot x \, y) (\lambda y \ldot y \, z)) = \mbox{?} \\[-0.6em] 
+\end{array}
+\vspace*{-1em}
+\]
+\item A term without any free variable is a \emblue{closed} term; o.w. it's \emblue{open}.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Variables and $\alpha$-equivalence}
+\begin{itemize}
+\item $\alpha$-equivalence: the names of bound variables are irrelevant --- they can be renamed.
+\begin{wrap}
+\vspace*{-0.8em}
+\[
+\lambda x \ldot e =_\alpha \lambda y \ldot e \set{y / x},
+\mbox{ where } y \not\in FV(e)
+\vspace*{-1em}
+\]
+\end{wrap}
+\Example \vspace*{-1em}
+\begin{eqnarray*}
+\lambda x \ldot x & =_\alpha & \lambda y \ldot y \\ 
+\lambda z \ldot x + z & \emred{\neq}_\alpha & \lambda z \ldot y + z \\
+\lambda z \ldot x + z & \emred{\neq}_\alpha & \lambda x \ldot x + x \\[-4em]
+\end{eqnarray*}
+\item Formal definition of renaming: \vspace*{-0.5em}
+\[
+\begin{array}{l@{\;}l}
+x \set{y / x} & \defeq y \\
+z \set{y / x} & \defeq z,  \mbox{ if } z \neq x \\
+(e \, e') \set{y / x} & \defeq (e \set{y / x}) (e' \set{y / x}) \\
+(\lambda x \ldot e) \set{y / x} & \defeq \lambda x \ldot e \\
+(\lambda z \ldot e) \set{y / x} & \defeq \lambda z \ldot (e \set{y / x})
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{$\beta$-reduction}
+How do we compute in $\lambda$-calculus?
+\begin{itemize}
+\item In models like $\lambda$-calculus, computations are done by \emred{reductions}, 
+  which basically turns an expression into another ``equivalent'' form. 
+\item In $\lambda$-calculus, the essential reduction is called $\beta$-reduction:
+\vspace*{-0.5em}
+\begin{wrap}
+\vspace*{-0.6em}
+\emred{$$(\lambda x \ldot e) e' \reduce e [e' / x] \vspace*{-1.2em}$$}
+\end{wrap}
+\vspace*{-0.2em}
+$e [e' / x]$ denotes the expression obtained from $e$ by \emblue{substituting} all free occurences 
+of $x$ with $e'$. \vspace*{-0.5em}
+\[
+\begin{array}{l@{\;}l}
+x [e / x] & \defeq e \\
+z [e / x] & \defeq z,  \mbox{ if } z \neq x \\
+(e_1 \, e_2) [e / x] & \defeq (e_1 [e / x]) (e_2 [e / x]) \\
+(\lambda x \ldot e') [e / x] & \defeq \lambda x \ldot e' \\
+(\lambda z \ldot e') [e / x] & \defeq \lambda z \ldot (e' [e / x]) \quad \mbox{if \emred{$z \not\in FV(e)$}} \\
+(\lambda z \ldot e') [e / x] & \defeq \lambda y \ldot (e' \set{y / z} [e / x]) \quad \mbox{if \emred{$z \in FV(e)$} and $y $ is {\em fresh}} \\
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{$\beta$-reduction}
+\begin{itemize}
+\item A term of the form $(\lambda x \ldot e) e'$ is a \emblue{$\beta$-redex}. \\
+$\beta$-reduction examples: \vspace*{-0.5em}
+\[
+\begin{array}{l}
+(\lambda x \ldot x + 1) \, 2 \reduce 2 + 1 \\[0.1em]
+(\lambda f . \lambda x \ldot f \, (f \, x)) \, \pmb{incr} 
+\reduce \lambda x \ldot \pmb{incr} (\pmb{incr} \, x) \\[0.1em]
+(\lambda f . \lambda g . \lambda x \ldot f \, (g \, x)) \, \pmb{incr} \, \pmb{double} \\[0.1em]
+\qquad \reduce (\lambda g . \lambda x \ldot \pmb{incr} (g \, x)) \, \pmb{double} 
+\reduce \lambda x \ldot \pmb{incr} (\pmb{double} \, x) \\[-1.8em]
+\end{array}
+\]
+\item Single-step $\beta$-reduction can take place inside $\lambda$-expressions:
+\vspace*{-0.5em}
+\begin{wrap}
+\vspace*{-0.5em}
+\[
+\begin{array}{c}
+\begin{prooftree}
+e_1 \reduce e_1'
+\justifies 
+e_1 e_2 \reduce e_1' e_2 
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+e_2 \reduce e_2'
+\justifies 
+e_1 e_2 \reduce e_1 e_2'
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+e \reduce e'
+\justifies 
+\lambda x \ldot e \reduce \lambda x \ldot e' 
+\end{prooftree}
+\end{array}
+\vspace*{-0.5em}
+\]
+\end{wrap}
+\Example \vspace*{-1em}
+\begin{eqnarray*}
+& & (\lambda f \ g \ x \ldot f (g \, x)) \, (\lambda x \ldot (\lambda  y \ldot x + y)  1)
+  \, ((\lambda x \ y \ldot x * y) \, 2) 
+\\
+& \reduce & (\lambda f \ g \ x \ldot f (g \, x)) \, (\lambda x \ldot (\lambda y \ldot x + y)  1) 
+  \, \empurple{(\lambda y \ldot 2 * y)}
+\\
+& \reduce & (\lambda f \ g \ x \ldot f (g \, x)) \, \empurple{(\lambda x \ldot x + 1)}
+  \, (\lambda y \ldot 2 * y)
+\\
+& \reduce & \ldots \; \ldots 
+\end{eqnarray*}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{$\beta$-reduction}
+\begin{itemize}
+\item Multi-step $\beta$-reduction $\reduceto_\beta$ is the {\em reflexive} and {\em transitive} closure 
+  of $\betareduce$. 
+\vspace*{-0.5em}
+$$
+(\lambda f \ g \ x \ldot f \ (g \ x)) \ \pmb{incr} \ \pmb{double} 
+\reduceto_\beta \lambda x \ldot \pmb{incr} \ (\pmb{double} \ x)
+$$ 
+$\beta$-equivalence $=_\beta$ is the {\em symmetric}, reflexive and transitive closure. %%  of $\betareduce$.
+\vspace*{-0.5em}
+$$
+(\lambda f \ g \ x \ldot f \ (g \ x)) \ \pmb{incr} \ \pmb{double} 
+=_\beta (\lambda f \ g \ x \ldot g \ (f \ x)) \ \pmb{double} \ \pmb{incr} 
+\vspace*{-2em}
+$$ 
+\item A term without any $\beta$-redexes is a \emblue{$\beta$-normal form}.
+\vspace*{-0.5em}
+$$ x \ y, \; \lambda x \ y \ldot y, \; y (\lambda x \ldot x) (\lambda x \ldot x) 
+\vspace*{-2em}
+$$
+\item $\beta$-reductions of untyped $\lambda$-terms can be \emblue{infinite}.
+\\[0.2em]
+\Example : $\Omega \defeq (\lambda x \ldot x x) (\lambda x \ldot x x)$
+\vspace*{-0.5em}
+\[
+(\lambda x \ldot x x) (\lambda x \ldot x x) 
+\reduce (\lambda x \ldot x x) (\lambda x \ldot x x)
+\reduce (\lambda x \ldot x x) (\lambda x \ldot x x) 
+\reduce \ldots
+\vspace*{-0.5em}
+\]
+The reduction can produce larger terms: \vspace*{-0.5em}
+$$
+(\lambda x \ldot x \ x \ x) (\lambda x \ldot x \ x \ x) 
+\reduce (\lambda x \ldot x \ x \ x) (\lambda x \ldot x \ x \ x) (\lambda x \ldot x \ x \ x)
+\reduce \cdots
+$$ 
+\end{itemize}
+\end{slide}
+
+\section{Programming $\lambda$-calculus}
+
+\begin{slide}{Programming untyped $\lambda$-calculus}
+In previous examples we have used $+$ and numerals ---  
+  they are not contained in the pure $\lambda$-calculus, but can be represented by $\lambda$-terms.
+\begin{itemize}
+\item This is about \emblue{encoding}, just as we can represent data and computations in binary.
+\item In terms of computability, \empurple{$\lambda$-calculus is equivalent to the Turing machine model}.
+\begin{itemize}
+\item More precisely, both $\lambda$-calculus and Turing machines define the same class of computable 
+  (numeric) functions.
+\item We shall see how different types of data and related operations can be programmed 
+  in $\lambda$-calculus.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Booleans}
+\begin{itemize}
+\item Normally, we use only \emblue{closed terms} to encode data and operations.
+\begin{eqnarray*}
+\pmb{True} & \defeq & \lambda x . \lambda y \ldot x  \\
+\pmb{False} & \defeq & \lambda x . \lambda y \ldot y
+\\[-3.5em]
+\end{eqnarray*}
+\item Boolean operations: 
+\begin{eqnarray*}
+\pmb{not} & \defeq & \lambda u \ldot \lambda v \ldot \lambda w \ldot u w v 
+\\
+\pmb{and} & \defeq & \lambda u \ldot \lambda v \ldot u v (\lambda x \ldot \lambda y \ldot y) 
+\\
+\ldots & \ldots &
+\end{eqnarray*}
+\vspace*{-1.5em} 
+\[
+\pmb{not} \ \pmb{True} = (\lambda u \ v \ w \ldot u \ w \ v) (\lambda x \ y \ldot x)
+\reduce \lambda v \ w \ldot (\lambda x\ y \ldot x) w \ v 
+\reduceto \lambda v \ w \ldot w
+\vspace*{-2em}
+\]
+\item If-Then-Else: 
+\[
+\begin{array}{l}
+\pmb{IF} \defeq \lambda u . \lambda v . \lambda w \ldot u v w
+\\[0.5em]
+\pmb{IF} \, \pmb{True} \, e_1 \, e_2 
+= (\lambda u \ v \ w \ldot u v w) (\lambda x \ y \ldot x) e_1 e_2
+\reduceto (\lambda x \ y \ldot x) e_1 e_2 \betareduce e_1
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Natural numbers}
+Natural numbers \vspace*{-0.5em}
+\begin{eqnarray*}
+\overline 0 & \defeq & \lambda f x \ldot x ,
+\\
+\overline 1 & \defeq & \lambda f x \ldot f x ,
+\\ 
+\overline 2 & \defeq & \lambda f x \ldot f (f x) ,
+\\
+\overline 3 & \defeq & \lambda f x \ldot f (f (f x)) ,
+\\
+& \ldots & \ldots
+\end{eqnarray*}
+\vspace*{-2.5em}
+\begin{itemize}
+\item This encoding is called the \emblue{Church numerals}: 
+$$\emblue{\underline n \defeq \lambda f . \lambda x \ldot f^n x} \vspace*{-2em}$$
+\item Natural number operations:
+\begin{eqnarray*}
+\pmb{add} & \defeq & \lambda u_1 . \lambda u_2 . \lambda f . \lambda x \ldot u_1 f (u_2 f x) 
+\\
+\pmb{mult} & \defeq & \lambda u_1 . \lambda u_2 . \lambda f . \lambda x \ldot u_1 (u_2 f) x 
+\\
+& \ldots & \ldots
+\end{eqnarray*}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Pairs and tuples}
+\begin{itemize}
+\item Pairs 
+\[
+\cpair{e_1, e_2} \defeq \lambda z \ldot z \ e_1 \ e_2
+\]
+Projections: \vspace*{-1.5em}
+\begin{eqnarray*}
+\pmb{first} & \defeq & \lambda u \ldot u (\lambda x \ y \ldot x) \\
+\pmb{second} & \defeq & \lambda u \ldot u (\lambda x \ y \ldot y) \\[-4.5em]
+\end{eqnarray*}
+\item Tuples
+\[
+\cpair{e_1, \ldots, e_n} \defeq \lambda z \ldot z \ e_1 \cdots e_n
+\]
+$i$-th projection: 
+$$\pmb{proj}_i \defeq \lambda u \ldot u (\lambda x_1 \cdots x_n \ldot x_i)$$
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Subtraction}
+\begin{itemize}
+\item We only concern unsigned arithmetic
+ \[
+\pmb{sub} \, n \, m = \left\{
+\begin{array}{l@{\quad}l}
+n - m & \mbox{if $n > m$} \\
+0 & \mbox{otherwise}
+\end{array}
+\right .
+\]
+\emgreen{\bf Question:} what about signed arithmetic?
+\item Define the predecessor: 
+ \[
+\pmb{pred} \, n = \left\{
+\begin{array}{l@{\quad}l}
+n - 1 & \mbox{if $n > 0$} \\
+0 & \mbox{otherwise}
+\end{array}
+\right .
+\]
+Encoding in $\lambda$-calculus (using pair)
+\[
+\emblue{\pmb{pred} \defeq \lambda n \ldot \pmb{first} \ (n \ P \ \cpair{0, 0})}
+\]
+where $P \defeq \lambda x \ldot \cpair{\pmb{second} \ x, (\pmb{second} \ x) + 1}$. 
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Subtraction}
+Programming \emblue{subtraction}
+\begin{itemize}
+\item Define $\pmb{sub}$ with $\pmb{pred}$:
+\[
+\emblue{\pmb{sub}\defeq \lambda n \ m \ldot m \ \pmb{pred} \ n}
+\vspace*{-2em}
+\]
+\item An alternative definition of $\pmb{pred}$ (without using pair):
+\[
+\pmb{pred} \defeq \lambda n \ f \ x \ldot n \ T \ (\lambda u \ldot x) (\lambda v \ldot v) 
+\]
+where $T \defeq \lambda g \ h \ldot h \ (g \ f)$.
+\\
+It can be checked that for $n > 0$, 
+\[
+T^n (\lambda u \ldot x) = \lambda h \ldot h \ (f^{n-1} (x))
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Inductive data structure --- list}
+Programming lists
+\begin{itemize}
+\item List is the very basic data structure in functional programming.
+\begin{itemize}
+\item A list is just a sequence of elements, e.g., $[3, 1, 2, 4]$.
+\item It has two constructs: \emblue{$\pmb{nil}$} --- the empty list, 
+  and \emblue{$\pmb{cons}$} --- the operation that produces a list by adding an element to 
+  the head of another list, e.g., 
+\[
+\pmb{cons} \ 2 \ [3, 1, 2, 4] = [2, 3, 1, 2, 4]
+\]
+\end{itemize}
+\item $\pmb{nil}$ and $\pmb{cons}$ in $\lambda$-calculus:
+\begin{eqnarray*}
+\pmb{nil} & \defeq & \lambda x \ y \ldot y \\
+\pmb{cons} & \defeq & \lambda h . \lambda t . \lambda x \ y \ldot x \ h \ t
+\end{eqnarray*}
+\emgreen{Exercise}: program $\pmb{isnil}$, $\pmb{length}$, \ldots
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Recursion and fix-points}
+\begin{itemize}
+\item Fix-point and recursion:
+\\[0.2em]
+Curry's (a.k.a. $\pmb{\mathrm{Y}}$-combinator): 
+$\pmb{\mathrm{Y}} \defeq \lambda f \ldot (\lambda x \ldot f (x x)) (\lambda x \ldot f (x x))$
+\vspace*{-0.5em}
+\[
+\pmb{\mathrm Y} F =_\beta F (\pmb{\mathrm Y} F)
+\vspace*{-1em}
+\]
+Turing's fix-point: $\Theta \defeq (\lambda x \ldot \lambda f \ldot f (x x f)) 
+(\lambda x \ldot \lambda f \ldot f (x x f))$
+\\[0.2em]
+There exist other fix-point combinators.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{The Church-Rosser theorem}
+\begin{itemize}
+\item \emblue{[Church \& Rosser, 1936]} If $e \reduceto e_1$ and $e \reduceto e_2$, then 
+there exists $e'$ such that $e_1 \reduceto e'$ and $e_2 \reduceto e'$.
+\[
+\begin{array}{c@{\qquad\qquad}c}
+\xymatrix@+=1pc{
+  & e \ar@{->>}[dl] \ar@{->>}[dr] & \\
+  e_1 \ar@{-->>}[dr] & & e_2 \ar@{-->>}[dl] \\
+  & e' &
+}
+&
+\xymatrix@+=1pc{
+  & e \ar[dl] \ar[dr] & \\
+  e_1 \ar@{-->}[dr] & & e_2 \ar@{-->}[dl] \\
+  & e' &
+} 
+\\
+(CR) & (Diamond)
+\end{array}
+\]
+\item Corollary
+\begin{itemize}
+\item If $e_1 =_\beta e_2$ then there exists $e'$ with $e_1, e_2 \reduceto e$.
+\\[0.3em]
+\item If $e$ is in $\beta$-normal form and $e =_\beta e'$, then $e' \reduceto e$.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Proof of the CR theorem}
+Define \emred{a ``parallel reduction'' relation $\gg$}:
+\[
+\begin{array}{c}
+\begin{prooftree}
+\justifies 
+e \gg e
+\using{(Refl)}
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+e \gg e'
+\justifies 
+\lambda x \ldot e \gg \lambda x \ldot e'
+\using{(Abs)}
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+e_1 \gg e_1' \quad e_2 \gg e_2'
+\justifies 
+e_1 e_2 \gg e_1' e_2'
+\using{(App)}
+\end{prooftree}
+\\[1.5em]
+\begin{prooftree}
+e_1 \gg e_1' \quad e_2 \gg e_2'
+\justifies 
+(\lambda x \ldot e_1) e_2 \gg e_1' [ e_2' / x]
+\using{(\parallel-\beta)}
+\end{prooftree}
+\end{array}
+\]
+The proof is supported by the following lemmas:
+\begin{itemize}
+\item[--] Lemma 1: \empurple{$\gg$ satisfies the Diamond-property}, i.e., if $e \gg e_1$ and $e \gg e_2$, 
+then there exists $e'$ with $e_1 , e_2 \gg e'$. 
+\item[--] Lemma 2: If $e \gg e'$ and $t \gg t'$, then $e [t / x] \gg e' [t' / x]$.
+\item[--] Lemma 3: $\reduceto$ is the transitive closure of $\gg$.
+\end{itemize}
+\end{slide}
+
+%% \begin{slide}{$\eta$-conversion}
+
+%% \end{slide}
+
+\end{document}
+ 
+

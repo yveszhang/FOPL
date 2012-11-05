@@ -1,0 +1,1020 @@
+\documentclass[paper=screen,mode=present,style=zysimple]{powerdot}
+
+\usepackage{fancyvrb,verbatim,listings}
+\usepackage{proof}
+\usepackage[all]{xypic,xy}
+
+\input{macros}
+
+\pdsetup{lf={Theory and Practice of Functional Programming}}
+
+\title{{\small \textsc{Theory and Practice of Functional Programming}}
+\\[12pt]
+{\Large \color{TitleColor} Simply Typed Lambda-Calculi (II)}
+}
+\author{\small \textbf{Dr. ZHANG Yu}
+  \\[2pt] \small Institute of Software, Chinese Academy of Sciences 
+  \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  \qquad \qquad 
+  \includegraphics[height=.04\slideheight]{cas.eps}
+}
+\date{GUCAS, Beijing}
+
+\newcommand{\RED}{\mathsf{RED}}
+
+\begin{document}
+
+\maketitle 
+
+\begin{slide}{Introduction}
+\begin{itemize}
+\item PCF --- {\em Programming Computable Functions}, mainly designed for program analysis 
+  and reasoning, rather than practical use.
+\begin{itemize}
+\item Syntax and type system 
+\item Reduction and operational semantics
+\item Expressive power
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Base types}
+\begin{itemize}
+\item Unit type: $\tunit$, which contains a single element $*$.
+\item Natural numbers: 
+\begin{itemize}
+\item Constants (values): $0, 1, 2, \ldots$.
+\item Arithmetic operations: $e_1 + e_2, e_1 * e_2, \ldots$.
+\end{itemize}
+$$\small
+\begin{prooftree}
+\Gamma \vdash e_1 : \tnat
+\quad \Gamma \vdash e_2 : \tnat
+\quad \mathtt{op} \in \set{+, -, *, /, \ldots}
+\justifies 
+\Gamma \vdash e_1 \;\mathtt{op}\; e_2 : \tnat 
+\end{prooftree}
+\vspace*{-2em}
+$$
+\item Booleans:
+\begin{itemize}
+\item Boolean constants (values): $\ctrue, \cfalse$.
+\item Equality test (of natural numbers): $e_1 \eqtest e_2$.
+\item Conditional: $\cif{e}{e_1}{e_2}$. 
+\end{itemize}
+$$\small
+\begin{prooftree}
+\Gamma \vdash e_1 : \tnat
+\quad \Gamma \vdash e_2 : \tnat
+\justifies 
+\Gamma \vdash e_1 \eqtest e_2 : \tbool
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma \vdash e : \tbool 
+\quad \Gamma \vdash e_1 : \tau 
+\quad \Gamma \vdash e_2 : \tau 
+\justifies 
+\Gamma \vdash \cif{e}{e_1}{e_2} : \tau 
+\end{prooftree}
+$$
+\end{itemize}
+\end{slide}
+
+\begin{slide}{More types}
+\begin{itemize}
+\item Product types: $\tau_1 \times \tau_2$ 
+% \begin{itemize}
+% \item Pairs: $\cpair{e_1, e_2}$.
+% \item Projections: $\cproj_i \cpair{e_1, e_2} = e_i$ ($i = 1, 2$).
+% \end{itemize}
+\[\small
+\begin{prooftree}
+\Gamma \vdash e_1 : \tau_1 
+\quad 
+\Gamma \vdash e_2 : \tau_2 
+\justifies 
+\Gamma \vdash \cpair{e_1, e_2} : \tau_1 \times \tau_2
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma \vdash e : \tau_1 \times \tau_2
+\justifies 
+\Gamma \vdash \cproj_i\ e : \tau_i
+\end{prooftree}
+\vspace*{-1.2em}
+\]
+\item Sum types: $\tau_1 + \tau_2$
+\begin{itemize}
+\item A value of $\tau_1 + \tau_2$ can be a value of either $\tau_1$ or $\tau_2$, distinguished by ``tags'' ($\cinj_1, \cinj_2$).
+\item We use $\mathtt{case}$ to retrieve the value (removing tags).
+\end{itemize}
+\[\small
+\begin{prooftree}
+\Gamma \vdash e : \tau_i
+\justifies
+\Gamma \vdash \cinj_i \ e : \tau_1 + \tau_2
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma, x_i : \tau_1 \vdash e_i : \tau (i = 1, 2)
+\quad 
+\Gamma \vdash e : \tau_1 + \tau_2
+\justifies
+\Gamma \vdash 
+\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 : \tau
+\end{prooftree}
+% \vspace*{-0.5em}
+\] 
+Boolean type can be defined using $\tunit$ and sum: $\tbool \defeq \tunit + \tunit$. 
+\vspace*{-0.5em}
+\[
+\begin{array}{c}
+\ctrue \defeq \cinj_1 \ * ,
+\qquad
+\cfalse \defeq \cinj_2 \ *
+\\[0.2em]
+\cif{e}{e_1}{e_2} \defeq 
+\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 \_ \; \mathtt{in} \; e_1 ; \cinj_2 \_ \; \mathtt{in} \; e_2
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}[method=direct]{Functions and recursions}
+%% \begin{verbatim}
+%% int fact (x : int) {
+%%   int y;
+%%   if (x == 0) then y = 1 else y = x * fact(x-1);
+%%   return y;
+%% }
+%% \end{verbatim}
+\begin{itemize}
+\item Function type $\tau \to \tau'$
+$$ \small
+\begin{prooftree}
+\Gamma, x: \tau  \vdash e : \tau'
+\justifies
+\Gamma \vdash \lambda x : \tau \ldot e : \tau \to \tau'
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma \vdash e_1 : \tau \to \tau'
+\quad 
+\Gamma \vdash e_2 : \tau
+\justifies
+\Gamma \vdash e_1 e_2 : \tau'
+\end{prooftree}
+$$
+\item PCF introduces explicitly an operator for fix-point: $\cfix_\tau$.
+\begin{itemize}
+\item If $F$ is a function of type $\tau \to \tau$, then the fix-point of $F$ 
+  is the value $x : \tau$ such that \emred{$F(x) = x$}, written as \emblue{$\cfix_\tau F$}. 
+\item A recursive definition $f : \tau = e$ (with $f$ occurs freely in $e$) indeed defines a fix-point of 
+  \emred{$\lambda f : \tau \ldot e$}.
+\item Example: factorization can be defined recursively: \vspace*{-0.5em}
+$$f = \lambda x : \tnat \ldot \cif{x \eqtest 0}{1}{x * f(x-1)} $$
+With fix-point operator in PCF, we shall write the definition as \vspace*{-0.5em}
+$$fact \defeq \cfix_{\tnat \to \tnat} (\lambda f \ldot \lambda x \ldot \cif{x \eqtest 0}{1}{x * f(x-1)})$$
+\vspace*{-1.5em}
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Syntax of PCF}
+\begin{itemize}
+\item Types:
+\[
+\tau_1, \tau_2, \ldots ::= \tnat \mid \tbool \mid \tau_1 \times \tau_2 \mid \tau_1 + \tau_2 \mid \tau_1 \to \tau_2
+\vspace*{-2em}
+\]
+% where $b$ ranges over a set of base types $\{ \tbool, \tnat, \ldots \}$.
+%% \item Order of types: 
+%% \[
+%% \begin{array}{l}
+%% \ford(b) = 0 , \qquad \mbox{if $b$ is a base type} \\
+%% \ford(\tau_1 \times \tau_2) = \max(\ford(\tau_1), \ford(\tau_2)) \\
+%% \ford(\tau_1 + \tau_2) = \max(\ford(\tau_1), \ford(\tau_2)) \\
+%% \ford(\tau_1 \to \tau_2) = \max(\ford(\tau_1)+1, \ford(\tau_2))
+%% \end{array}
+%% \]
+\item Expressions (terms): \vspace*{-0.5em}
+\[\small
+\begin{array}{lrll}
+e_1, e_2, \ldots & ::= &
+x & \mbox{variables} 
+\\ & \mid & 
+0, 1, 2,  \ldots & \mbox{natural numbers}
+\\ & \mid & 
+e_1 \; \mathtt{op} \; e_2 & \mbox{arithmetic operations} 
+\\ & \mid & 
+\ctrue \mid \cfalse & \mbox{booleans}
+\\ & \mid & 
+e_1 \eqtest e_2 & \mbox{equality test} 
+\\ & \mid & 
+\cif{e}{e_1}{e_2} & \mbox{conditional}
+\\ & \mid & 
+\cpair{e_1, e_2} & \mbox{pairing}
+\\ & \mid & 
+\cproj_1 e \mid \cproj_2 e & \mbox{projections}
+\\ & \mid & 
+\cinj_1 e \mid \cinj_2 e & \mbox{injections}
+\\ & \mid & 
+\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; 
+& \mbox{case distinction}
+\\ & & \hspace*{4.5em}
+\cinj_2 x_2 \; \mathtt{in} \; e_2 & 
+\\ & \mid & 
+\lambda x : \tau \ldot e \mid e_1 \, e_2 & \mbox{functions and applications}
+\\ & \mid & 
+\cfix_\tau & \mbox{recursion (fix point)}
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{PCF typing rules}
+\vspace*{-1em}
+\[\small
+\begin{array}{c}
+\begin{prooftree}
+x : \tau \in \Gamma
+\justifies
+\Gamma \vdash x : \tau 
+\end{prooftree}
+\qquad
+\begin{prooftree}
+n = 0, 1, 2, \ldots 
+\justifies
+\Gamma \vdash n : \tnat 
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma \vdash e_1 : \tnat 
+\quad \Gamma \vdash e_2 : \tnat 
+\quad \mathtt{op} \in \set{+, -, * , /}
+\justifies
+\Gamma \vdash e_1 \;\mathtt{op}\; e_2 : \tnat 
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\justifies
+\Gamma \vdash \ctrue : \tbool
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\justifies
+\Gamma \vdash \cfalse : \tbool
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma \vdash e_1 : \tnat 
+\qquad 
+\Gamma \vdash e_2 : \tnat 
+\justifies
+\Gamma \vdash e_1 \eqtest e_2 : \tbool
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\Gamma \vdash e : \tbool
+\qquad 
+\Gamma \vdash e_1 : \tau
+\qquad 
+\Gamma \vdash e_2 : \tau 
+\justifies
+\Gamma \vdash \cif{e}{e_1}{e_2} : \tau 
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma \vdash e_1 : \tau_1
+\qquad 
+\Gamma \vdash e_2 : \tau_2 
+\justifies
+\Gamma \vdash \cpair{e_1, e_2} : \tau_1 \times \tau_2
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\Gamma \vdash e : \tau_1 \times \tau_2
+\justifies
+\Gamma \vdash \cproj_1 e : \tau_1
+\end{prooftree}
+\qquad
+\begin{prooftree}
+\Gamma \vdash e : \tau_1 \times \tau_2
+\justifies
+\Gamma \vdash \cproj_2 e : \tau_2 
+\end{prooftree}
+\qquad
+\begin{prooftree}
+\Gamma \vdash e : \tau_1
+\justifies
+\Gamma \vdash \cinj_1 \ e : \tau_1 + \tau_2
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma \vdash e : \tau_2
+\justifies
+\Gamma \vdash \cinj_2 \ e : \tau_1 + \tau_2
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\Gamma, x_1 : \tau_1 \vdash e_1 : \tau 
+\qquad 
+\Gamma, x_2 : \tau_2 \vdash e_2 : \tau 
+\qquad 
+\Gamma \vdash e : \tau_1 + \tau_2
+\justifies
+\Gamma \vdash 
+\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 : \tau
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+\Gamma, x: \tau  \vdash e : \tau'
+\justifies
+\Gamma \vdash \lambda x : \tau \ldot e : \tau \to \tau'
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+\Gamma \vdash e_1 : \tau \to \tau'
+\qquad 
+\Gamma \vdash e_2 : \tau
+\justifies
+\Gamma \vdash e_1 e_2 : \tau'
+\end{prooftree}
+\qquad
+\begin{prooftree}
+\Gamma \vdash e : \tau \to \tau
+\justifies
+\Gamma \vdash \cfix_\tau e : \tau
+\end{prooftree}
+\end{array}
+\]
+\end{slide}
+
+\begin{slide}{Type checking}
+\begin{itemize}
+\item A procedure of checking the validity of a type assertion, by typing rules and 
+  induction on expression structure.
+\item Example: 
+  $\cfix_{\tnat \to \tnat} \lambda f : \tnat \to \tnat \ldot \lambda x : \tnat \ldot 
+\cif{x \eqtest 0}{1}{x * f(x-1)}$
+\end{itemize}
+\vspace*{-0.5em}
+\tiny
+\[
+\begin{prooftree}
+\begin{prooftree}
+\begin{prooftree}
+\begin{prooftree}
+\begin{prooftree}
+\begin{prooftree}
+\justifies 
+\Gamma\vdash  x : \tnat
+\end{prooftree}
+\quad 
+\begin{prooftree}
+\justifies 
+\Gamma \vdash  0 : \tnat
+\end{prooftree}
+\justifies 
+\Gamma \vdash  x \eqtest 0 : \tbool
+\end{prooftree}
+\quad
+\begin{prooftree}
+\justifies 
+\Gamma \vdash 1 : \tnat 
+\end{prooftree}
+\quad 
+\begin{prooftree}
+\begin{prooftree}
+\justifies 
+\Gamma \vdash  x : \tnat
+\end{prooftree}
+\quad 
+\begin{prooftree}
+\begin{prooftree}
+\justifies 
+\Gamma \vdash  f : \tnat \to \tnat
+\end{prooftree}
+\quad 
+\begin{prooftree}
+\begin{prooftree}
+\justifies 
+\Gamma \vdash  x : \tnat
+\end{prooftree}
+\quad 
+\begin{prooftree}
+\justifies 
+\Gamma \vdash  1 : \tnat
+\end{prooftree}
+\justifies 
+\Gamma \vdash  x-1 : \tnat
+\end{prooftree}
+\justifies 
+\Gamma \vdash  f(x-1) : \tnat
+\end{prooftree}
+\justifies 
+\Gamma \vdash  x * f(x-1) : \tnat 
+\end{prooftree}
+\justifies 
+f : \tnat \to \tnat, x : \tnat \vdash  
+\cif{x \eqtest 0}{1}{x * f(x-1)} : \tnat
+\end{prooftree}
+\justifies 
+f : \tnat \to \tnat \vdash \lambda x : \tnat \ldot 
+\cif{x \eqtest 0}{1}{x * f(x-1)} : \tnat \to \tnat
+\end{prooftree}
+\justifies 
+\vdash \lambda f : \tnat \to \tnat \ldot \lambda x : \tnat \ldot 
+\cif{x \eqtest 0}{1}{x * f(x-1)} : (\tnat \to \tnat) \to (\tnat \to \tnat)
+\end{prooftree}
+\justifies
+\vdash \cfix_{\tnat \to \tnat} \lambda f : \tnat \to \tnat \ldot \lambda x : \tnat \ldot 
+\cif{x \eqtest 0}{1}{x * f(x-1)} : \tnat \to \tnat
+\end{prooftree}
+\]
+\end{slide}
+
+\begin{slide}{PCF reduction}
+\begin{itemize}
+\item $\beta$-reduction: $(\lambda x : \tau \ldot e) e' \reduce e [e' / x]$.
+\item Other reductions:
+\[
+\begin{array}{l}
+2 + 3 \reduce 5, 
+\quad 12 \eqtest 23 \reduce \cfalse ,
+\quad \ldots
+\\[0.2em]
+\cif{\ctrue}{e_1}{e_2} \reduce e_1, 
+\quad \cif{\cfalse}{e_1}{e_2} \reduce e_2
+\\[0.2em]
+\cproj_1 \cpair{e_1, e_2} \reduce e_1, 
+\quad \cproj_2 \cpair{e_1, e_2} \reduce e_2
+\\[0.2em]
+\mathtt{case} \; \emblue{\cinj_1 e} \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 
+\reduce \emblue{e_1[e / x_1]}
+\\[0.2em]
+\mathtt{case} \; \emblue{\cinj_2 e} \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 
+\reduce \emblue{e_2[e / x_2]}
+\end{array}
+\vspace*{-1em}
+\]
+\item Reduction of fix-pointer: \vspace*{-0.5em}
+$$\emred{\cfix_\tau \reduce \lambda f : \tau \to \tau \ldot f (\cfix_\tau f) } \vspace*{-0.5em}$$
+PCF reductions may not terminate: \vspace*{-0.5em}
+\[\small
+\begin{array}{ll}
+\cfix \, \lambda x \ldot x 
+& \reduce (\lambda f \ldot \cfix \, f (\cfix \, f)) (\lambda x \ldot x) 
+\\ & 
+\reduce (\lambda x \ldot x) (\cfix \, \lambda x \ldot x)
+\\ & 
+\reduce \emblue{\cfix \, \lambda x \ldot x}
+\reduce \cdots 
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{PCF reduction}
+\begin{itemize}
+\item Example:
+\vspace*{-0.5em}
+$$fact \defeq  \cfix_{\tnat \to \tnat} (\lambda f \ldot \lambda x \ldot \cif{x \eqtest 0}{1}{x * f(x-1)}) $$
+$$\small
+\begin{array}{ll}
+& fact \; (n+1) 
+\\ = & 
+\cfix_{\tnat \to \tnat} (\lambda f \ldot \lambda x \ldot \cif{x \eqtest 0}{1}{x * f(x-1)}) (n+1)
+\\ \reduce & 
+(\lambda g \ldot g (\cfix_{\tnat \to \tnat} g)) (\lambda f \ldot \lambda x \ldot \cif{x \eqtest 0}{1}{x * f(x-1)}) (n+1)
+\\ \reduce & 
+Fact (\cfix_{\tnat \to \tnat} Fact) \; (n+1)
+\\ & 
+\mbox{(where $Fact = \lambda f \ldot \lambda x \ldot \cif{x \eqtest 0}{1}{x * f(x-1)}$)}
+\\ = & 
+(\lambda f \ldot \lambda x \ldot \cif{x \eqtest 0}{1}{x * f(x-1)}) fact \; (n+1)
+\\ \reduce & 
+(\lambda x \ldot \cif{x \eqtest 0}{1}{x * fact(x-1)}) (n+1)
+\\ \reduce &
+\cif{n+1 \eqtest 0}{1}{(n+1) * fact(n+1-1)} 
+\\ \reduce &
+\cif{\cfalse}{1}{(n+1) * fact(n+1-1)} 
+\\ \reduce & 
+(n+1) * fact(n+1-1) 
+\end{array}
+\vspace*{-1em}
+$$
+\item A syntactic abbreviation for recursion 
+\vspace*{-0.8em}
+\[
+\begin{array}{l}
+\emblue{\mathtt{letrec}} \; fact \emblue{=} 
+\lambda x : \tnat \ldot \cif{x \eqtest 0}{1}{x * fact(x-1)} \\
+\emblue{\mathtt{in}} \; fact \; (n+1)
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{PCF reduction}
+\begin{itemize}
+\item Multi-step reduction $\reduceto$: the reflexive (w.r.t. $\alpha$-equivalence) 
+and transitive closure of $\reduce$. 
+\vspace*{-0.5em}
+\[
+e \reduceto e' \mbox{ if } e =_\alpha e' \mbox{ or } e \reduce e'' \;\&\; e'' \Reduce e'
+\vspace*{-2.5em}
+\]
+\item PCF reductions are \emblue{non-deterministic}. 
+\vspace*{-0.5em}
+\[
+\begin{array}{l}
+\cpair{12 + 47, 5 * 6} \reduce \cpair{59, 5 * 6} \reduce \cpair{59, 30}
+\\
+\cpair{12 + 47, 5 * 6} \reduce \cpair{12 + 47 , 30} \reduce \cpair{59, 30}
+\end{array}
+\vspace*{-2em}
+\]
+\item \empurple{PCF reduction system is confluent} --- it satisfies Church-Rosser property.
+\begin{itemize}
+\item No PCF term can have more than one normal form.
+\item Inconsistent reduction system with \empurple{$\cfix e \reduce e (\cfix e)$} and $\eta$-reduction.
+\[
+\begin{array}{l}
+\lambda x \ldot \cfix \, x \reduce_\eta \cfix  \\[0.6em]
+\lambda x \ldot \cfix \, x \reduce_{\cfix} \lambda x \ldot x (\cfix \, x) 
+\reduce_{\cfix} \lambda x \ldot x ( x (\cfix \, x)) \reduce \ldots
+\end{array}
+\]
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{PCF values and canonical form}
+\begin{itemize}
+\item PCF values are \empurple{closed expressions that cannot be reduced any more}. 
+\item PCF values are in \emblue{canonical forms}:
+\begin{itemize}
+\item Boolean values: $\ctrue$, $\cfalse$.
+\item Natural number values: $0, 1, 2, \ldots$. 
+\item Product values: $\cpair{e_1, e_2}$.
+\item Injective values: $\cinj_1 e, \cinj_2 e$.
+\item Function values: $\lambda x \ldot e$.
+\end{itemize}
+\item \empurple{Every closed normal PCF expression must be in the canonical form}. \\[0.3em]
+{\em Proof.} By induction on the structure of PCF expressions.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Reduction strategy}
+\begin{itemize}
+\item Restrict the reduction system so that reductions are \emred{deterministic} and consistent with 
+  the original system. 
+% \\ A reduction strategy defines a (partial) function from terms to terms.
+% \\[0.3em]
+\item Different reduction strategies
+\[
+\begin{array}{l@{\qquad}l}
+(\lambda x: \tau \ldot e_1) e_2 \reduce e_1 [e_2 / x] 
+& \mbox{Lazy evaluation, a.k.a, call-by-name} \\[0.8em]
+(\lambda x: \tau \ldot e_1) e_2 \reduce (\lambda x: \tau \ldot e_1') e_2 
+& \mbox{Function optimization} \\[0.8em]
+(\lambda x: \tau \ldot e_1) e_2 \reduce (\lambda x: \tau \ldot e_1) e_2'
+& \mbox{Eager evaluation, a.k.a, call-by-value}
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{A reduction system with lazy evaluation}
+If the top-level term is a redex, it will be reduced first: if $e \reduce e'$, then $e \lazyreduce e'$.
+\vspace*{-0.5em}
+\[\small
+\begin{array}{c}
+\emred{
+\begin{prooftree}
+e_1 \lazyreduce e_1' 
+\justifies
+e_1 e_2  \lazyreduce e_1' e_2
+\end{prooftree}
+}
+\qquad
+\begin{prooftree}
+e_1 \lazyreduce e_1'
+\quad \mathtt{op} \in \set{+, -, *, /, \eqtest}
+\justifies
+e_1 \;\mathtt{op}\; e_2 \lazyreduce e_1' + e_2
+\end{prooftree}
+\\[2em] 
+\begin{prooftree}
+e \lazyreduce e' 
+\quad n \in \set{0, 1, 2, \ldots}
+\quad \mathtt{op} \in \set{+, -, *, /, \eqtest}
+\justifies
+n \;\mathtt{op}\; e \lazyreduce n + e'
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+e \lazyreduce e' 
+\justifies
+\cif{e}{e_1}{e_2} \lazyreduce \cif{e'}{e_1}{e_2}
+\end{prooftree}
+\qquad
+\begin{prooftree}
+e \lazyreduce e' 
+\justifies
+\cproj_i \, e \lazyreduce \cproj_i \, e'
+\end{prooftree}
+\\[2em]
+\begin{prooftree}
+e \lazyreduce e'
+\justifies
+\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 
+\lazyreduce \mathtt{case} \; e' \; \mathtt{of} \ldots
+\end{prooftree}
+\end{array}
+\vspace*{-1em}
+\]
+\begin{itemize}\small
+\item Consistency with the PCF reduction system: if $e \Lazyreduce e'$, then $e \reduceto e'$
+\item Incompleteness: lazy normal form is not necessarily PCF-normal form.
+\end{itemize}
+\end{slide}
+
+%% \begin{slide}{Eager PCF}
+%% \begin{itemize}
+%% \item Also known as \emblue{call-by-value} reduction. \\
+%% Values: $\ctrue, \cfalse, 0, 1, \ldots, \cpair{v_1, v_2}, \lambda x \ldot e, \delay{e}$ 
+%% ($\delay{e} \defeq \lambda x : \tau \ldot e x$)
+%% \\[0.4em]
+%% \item Eager reductions ($v, v_1, v_2$ are values): \vspace*{-0.5em}
+%% \[
+%% \begin{array}{l}
+%% 0 + 0 \eagerreduce 0, \; 0 + 1 \eagerreduce 1, \; \ldots \\[0.3em]
+%% n \eqtest n \eagerreduce \ctrue, \; n \eqtest m \eagerreduce \cfalse (n \neq m) \\[0.3em]
+%% \cif{\ctrue}{e_1}{e_2} \eagerreduce e_1 , \; 
+%% \cif{\cfalse}{e_1}{e_2} \eagerreduce e_2 \\[0.3em]
+%% \emblue{(\lambda x: \tau \ldot e) v \eagerreduce e [v / x]} \\[0.3em]
+%% \cproj_i \cpair{v_1, v_2} \eagerreduce v_i \\[0.3em]
+%% \emblue{\cfix v \eagerreduce v (\delay{\cfix v}) }
+%% \end{array}
+%% \vspace*{-1em}
+%% \]
+%% \item Evaluation context \vspace*{-0.6em}
+%% \begin{eqnarray*}
+%% \evalcontext_e & ::= & 
+%% \termhole \mid \evalcontext_e + e \mid n + \evalcontext_e \mid \evalcontext_e \eqtest e 
+%% \mid n \eqtest \evalcontext_e \mid \cif{\evalcontext_e}{e_1}{e_2} 
+%% \\ & & 
+%% \mid \cproj_i \, \evalcontext_e \mid \cpair{\evalcontext_e, e} \mid \cpair{v, \evalcontext_e}
+%% \mid \evalcontext_e \, e \mid \emblue{v \, \evalcontext_e}
+%% \end{eqnarray*}
+%% \end{itemize}
+%% \end{slide}
+
+\begin{slide}{Lazy and eager evaluation}
+\begin{itemize}
+\item Lazy evaluation may lead to \emred{low efficient} computation, as it often produces multiple copies of 
+  a expression, which will be executed (reduced) for multiple times. 
+\vspace*{-0.5em}
+\begin{itemize}
+\item In practical FPL with lazy evaluation (e.g., Haskell), duplication is done by setting multiple
+  pointers to a single expression, which is executed only once if necessary.
+  This is  \emblue{\em call-by-need} evaluation.
+\vspace*{-1em}
+\end{itemize}
+\item Eager evaluation can lead to \emred{non-terminating} computations for programs that necessarily terminate with 
+  lazy evaluation.
+\vspace*{-0.5em}
+\[
+(\lambda x : \tnat \ldot 0) ((\cfix \lambda y : \tnat \ldot y) 0)
+\lazyreduce 0
+\vspace*{-1em}
+\]
+\begin{eqnarray*}
+& & (\lambda x : \tnat \ldot 0) ((\cfix \lambda y : \tnat \ldot y) 0)
+\\ & \eagerreduce &
+(\lambda x : \tnat \ldot 0) (((\lambda y: \tnat \ldot y) \delay{\cfix \lambda y: \tnat \ldot y} 0)
+\\ & \eagerreduce &
+(\lambda x : \tnat \ldot 0) ((\lambda z: \tnat \ldot (\cfix \lambda y: \tnat \ldot y) z) 0)
+\\ & \eagerreduce &
+(\lambda x : \tnat \ldot 0) ((\cfix \lambda y: \tnat \ldot y) 0)
+\end{eqnarray*}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Semantics}
+\begin{itemize}
+\item Roughly speaking, semantics is the meaning of programs. 
+\\[0.4em]
+\item Three styles of semantics
+\begin{itemize}
+\item \emblue{Operational semantics}: how do programs execute (reduce)? \\
+  It's about the evaluation or computation procedure of programs.
+\item \emblue{Axiomatic semantics}: do programs satisfy a certain property? \\
+  It's about the reasoning of properties of and relations between programs.
+\item \emblue{Denotational semantics}: what do programs represent? \\
+  It's about the exact (mathematical) object that a program denotes.
+\end{itemize}
+\item In this course we only discuss operational semantics. For the other two semantics, 
+  please refer to Prof. Liu Xinxin's course on formal semantics of programming languages.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Operational semantics}
+\begin{itemize}
+\item The PCF reduction system indeed defines an operational semantics of PCF, which we often refer to as 
+  \emblue{small-step} semantics.
+\vspace*{-0.5em}
+\item Big-step semantics: $e \Reduceto e'$ if $e \reduce^* e'$ and $\neg (e' \reduce)$.
+\end{itemize}
+\[\small
+\begin{array}{c}
+\begin{prooftree}
+c \in \set{\ctrue, \cfalse, 0, 1, 2, \ldots}
+\justifies
+c \Reduceto c
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+e_1 \Reduceto n_1 
+\quad e_2 \Reduceto n_2 
+\quad n_1 \;\mathtt{op}\; n_2  = n
+% \quad \mathtt{op} \in \set{+, -, *, /}
+\justifies
+e_1 \cop e_2 \Reduceto n
+\end{prooftree}
+\\[1.8em]
+\begin{prooftree}
+e_1 \Reduceto n_1 
+\quad e_2 \Reduceto n_2 
+\quad n_1 \neq n_2
+\justifies
+e_1 \eqtest e_2 \Reduceto \cfalse 
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+e_1 \Reduceto n 
+\quad e_2 \Reduceto n 
+\justifies
+e_1 \eqtest e_2 \Reduceto \ctrue
+\end{prooftree}
+\qquad
+\begin{prooftree}
+e \Reduceto \ctrue 
+\quad e_1 \Reduceto v_1 
+\justifies
+\cif{e}{e_1}{e_2} \Reduceto v_1
+\end{prooftree}
+\\[1.8em]
+\begin{prooftree}
+e \Reduceto \cfalse
+\quad e_2 \Reduceto v_2
+\justifies
+\cif{e}{e_1}{e_2} \Reduceto v_2
+\end{prooftree}
+\qquad
+\begin{prooftree}
+e_1 \Reduceto v_1 
+\quad e_2 \Reduceto v_2 
+\justifies
+\cpair{e_1, e_2} \Reduceto \cpair{v_1, v_2}
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+e \Reduceto \cpair{v_1, v_2}
+\justifies
+\cproj_i \, e \Reduceto v_i
+\end{prooftree}
+\\[1.8em]
+\begin{prooftree}
+e \Reduceto v 
+\justifies
+\cinj_i e \Reduceto \cinj_i v
+\end{prooftree}
+\qquad
+\begin{prooftree}
+e \Reduceto \cinj_1 v_1
+\quad e_1 [v_1 / x_1] \Reduceto v
+\justifies
+\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 
+\Reduceto v
+\end{prooftree}
+\\[1.8em]
+\begin{prooftree}
+e \Reduceto \cinj_2 v_2
+\quad e_2 [v_2 / x_2] \Reduceto v
+\justifies
+\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2 
+\Reduceto v
+\end{prooftree}
+\qquad
+\begin{prooftree}
+e_1 \Reduceto \lambda x \ldot e_1'
+\quad e_1'[ e_2 / x ] \Reduceto v
+\justifies
+e_1 e_2 \Reduceto v
+\using{\mbox{\emred{(Lazy)}}}
+\end{prooftree}
+%% \qquad
+%% \begin{prooftree}
+%% e (\cfix \, \delay{e}) \Reduceto v
+%% \justifies
+%% \cfix \, e \Reduceto v
+%% \end{prooftree}
+\end{array}
+\]
+\end{slide}
+
+\begin{slide}{Total recursive functions}
+\begin{itemize}
+\item A class $\mathcal C$ of {\em numeric functions} $f: \vnat^k \to \vnat$ is
+\vspace*{-0.5em} 
+\small
+\begin{itemize}
+\item {\em closed under composition}: for every $f_1, \ldots , f_l: \vnat^k \to \vnat$ and 
+$g: \vnat^l \to \vnat$ of $\mathcal C$, the function 
+\empurple{$h(n_1, \ldots, n_k) = g(f_1(n_1, \ldots, n_k), \ldots, f_l(n_1, \ldots, n_k))$} is 
+also in $\mathcal C$.
+\item {\em closed under primitive recursion}: for every $f: \vnat^k \to \vnat$ and 
+  $g: \vnat^{k+2} \to \vnat$ of $\mathcal C$, the function $h: \vnat^{k+1} \to \vnat $ 
+  defined as follows is in $\mathcal C$: \vspace*{-0.5em}
+\empurple{
+\begin{eqnarray*}
+h (0, n_1, \ldots , n_k) & = & f (n_1, \ldots, n_k) \\
+h (m+1, n_1, \ldots, n_k) & = & g (m, n_1, \ldots, n_k, h(m, n_1, \ldots, n_k)) \\[-3.5em]
+\end{eqnarray*}
+}
+\item {\em closed under minimization}: for every $f: \vnat^{k+1} \to \vnat$ of $\mathcal C$ 
+  such that $\forall n_1, \ldots, n_k, \exists m, f(m, n_1, \ldots, n_k) = 0$, 
+  the function \empurple{$g (n_1, \ldots, n_k) = \min(\set{m \mid f(m, n_1, \ldots, n_k) = 0})$}
+  is in $\mathcal C$.
+\vspace*{-0.5em}
+\end{itemize}
+\normalsize
+\item \emblue{Total recursive functions} are the least class of numeric functions:
+\vspace*{-0.5em}
+\begin{itemize}
+\item closed under composition, primitive recursion and minimization;
+\item contains projection function \empurple{$\pmb{proj}_i^k (n_1, \ldots, n_k) = n_i$}, 
+  successor function \empurple{$\pmb{succ}(n) = n+1$} 
+  and constant zero function \empurple{$\pmb{zero}(n) = 0$}.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Expressing total recursive functions in PCF}
+\begin{itemize}
+\item A numeric function $f: \vnat^k \to \vnat$ is {\em PCF-definable} 
+  if there exists a PCF program $e$ of $\tnat^k \to \tnat$ such that 
+  $\Eval{e} = f$ in the set-theoretic model.
+\item Every total recursive function is definable in PCF. \\
+{\em Proof.} It suffices to define a PCF term for every basic function and composition, primitive recursion, 
+minimization.
+\vspace*{-0.5em}
+\begin{itemize}
+\item Basic functions: $\overline{\pmb{proj}_i^k} \defeq \lambda x_1 \ldot \cdots \lambda x_k \ldot x_i$.
+\item Composition: 
+\vspace*{-0.5em}
+\[
+\overline{h} \defeq \lambda x_1 \ldot \cdots \lambda x_k \ldot 
+\overline{g} (\overline{f_1} x_1 \cdots x_k) \cdots (\overline{f_l} x_1 \cdots x_k) 
+\vspace*{-2.5em}
+\]
+\item Primitive recursion
+\vspace*{-0.5em}
+\[
+\begin{array}{ll}
+\overline{h} \defeq \! \! & \cfix \, \lambda h' \ldot \lambda n \ldot 
+\\ &
+\qquad\cif{n > 0}
+{\lambda \vec{x} \ldot \overline{g} (n-1, \vec{x}, h' (n-1, \vec{x}))}
+{\lambda \vec{x} \ldot \overline{f} \vec{x}}
+\end{array}
+\vspace*{-1.5em}
+\]
+\item Minimization: 
+\vspace*{-0.5em}
+\[
+\overline{g} \defeq (\cfix \, \lambda g' \ldot \lambda n \ldot \lambda \vec{x} \ldot  
+\cif{f (n, \vec x) \eqtest 0}{n}{g' (n+1, \vec x)}) 0
+\vspace*{-0.5em}
+\]
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Partial recursive functions}
+Partial numeric functions $f: \vnat^k \to \vnat$ can be undefined at some points.
+\vspace*{-0.5em}
+\small
+\begin{itemize}
+\item {\em Closed under composition}: for every $f_1, \ldots , f_l: \vnat^k \to \vnat$ and 
+$g: \vnat^l \to \vnat$ of $\mathcal C$, the composition function is in $\mathcal C$:
+\vspace*{-0.6em}
+\empurple{
+\[
+h(n_1, \ldots, n_k) = \left \{ 
+\begin{array}{ll}
+g(m_1, \ldots, m_l) & \mbox{if $m_i = f_i(n_1, \ldots, n_k)$ and}
+\\ & \mbox{$g(m_1, \ldots, m_l)$ are defined}
+\\[0.2em]
+\bot & \mbox{otherwise}
+\end{array}
+\right.
+\vspace*{-1.2em}
+\]
+}
+\item {\em closed under primitive recursion}: for every $f_1, \ldots , f_l: \vnat^k \to \vnat$ and 
+  $g: \vnat^{k+2} \to \vnat$ of $\mathcal C$, the function $h: \vnat^{k+1} \to \vnat $ 
+  defined as follows is in $\mathcal C$: \vspace*{-0.5em}
+\empurple{
+\begin{eqnarray*}
+h (0, n_1, \ldots , n_k) & = & 
+\left \{ 
+\begin{array}{ll}
+f (n_1, \ldots, n_k) & \mbox{if $f(n_1, \ldots, n_k)$ is defined} \\
+\bot & \mbox{o.w.}
+\end{array}
+\right .
+\\
+h (m+1, n_1, \ldots, n_k) & = & \left \{
+\begin{array}{ll}
+g (m, n_1, \ldots, n_k, q) & \mbox{if $q = h(m, n_1, \ldots, n_k)$ and}
+\\ & \mbox{$g(m, n_1, \ldots , n_k, q)$ are defined} 
+\\
+\bot & \mbox{o.w.}
+\end{array}
+\right .
+\\[-2.5em]
+\end{eqnarray*}
+}
+\item {\em closed under minimization}: for every $f: \vnat^{k+1} \to \vnat$ of $\mathcal C$, 
+  $\mathcal C$ contains the function 
+\vspace*{-0.5em}
+\empurple{
+\[
+g (n_1, \ldots, n_k) = \left \{
+\begin{array}{l}
+\mbox{the least $m$ s.t. $f(m, n_1, \ldots, n_k) = 0$ if such $m$ exist}  \\[0.2em]
+\bot \mbox{ otherwise}
+\end{array}
+\right.
+\]
+}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Expressing partial recursive functions in PCF}
+\begin{itemize}
+\item \emblue{Partial recursive functions} are the least class of partial numeric functions:
+\vspace*{-0.5em}
+\begin{itemize}
+\item closed under composition, primitive recursion and minimization;
+\item contains projection function \empurple{$\pmb{proj}_i^k$}, successor function \empurple{$\pmb{succ}$}
+  and constant zero function \empurple{$\pmb{zero}$}.
+\end{itemize}
+\item Every partial recursive function is definable in PCF. \\[0.3em]
+{\em Proof. } Representing undefinedness by \emred{non-termination} in PCF: 
+\[
+\overline{\bot} \defeq \cfix \, \lambda f \ldot f
+\vspace*{-1.5em}
+\]
+\item By Church's thesis, all mechanically computable functions on natural numbers are definable in PCF.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Non-definability of parallel operations}
+\begin{itemize}
+\item The {\em parallel-or} operation:
+\[
+\pmb{POR} \, e_1 \, e_2 \reduceto \left \{
+\begin{array}{ll}
+\ctrue & \mbox{if $e_1 \reduceto \ctrue$ \emred{or}  $e_2 \reduceto \ctrue$} 
+\\
+\cfalse & \mbox{if $e_1 \reduceto \cfalse$ and $e_2 \reduceto \cfalse$} 
+\\
+\mbox{no normal form} & \mbox{otherwise}
+\end{array}
+\right .
+\]
+where $e_1, e_2$ are closed PCF terms. 
+\item There is no PCF program that defines $\pmb{POR}$.
+\\[0.3em]
+The proof can be found in Chapter 2 of J. Mitchell's book {\em Foundations for Programming Languages},
+which relies essentially on the \emred{sequentiality} of PCF reduction system.
+%% no matter what evaluation strategy it is, given an evaluation context $E\termhole$, 
+%% the evaluation of the program $E[\pmb{POR} \, e_1 \, e_2]$ 
+%% \vspace*{-0.5em}
+%% \begin{itemize}
+%% \item either does not evaluate $\pmb{POR} \, e_1 \, e_2$ at all, 
+%% \item or eventually reduces to $E'[e_i]$ for $i = 1 , 2$ and another evaluation context $E'\termhole$. 
+%% \end{itemize}
+%% This says that the evaluation will never computes $e_1$ and $e_2$ at the same time.
+\end{itemize}
+\end{slide}
+
+\end{document}
+ 
+

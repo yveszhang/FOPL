@@ -1,0 +1,309 @@
+\documentclass[paper=screen,mode=present,style=zysimple]{powerdot}
+
+\usepackage{fancyvrb,verbatim,listings}
+\usepackage{proof}
+\usepackage[all]{xypic,xy}
+
+\input{macros}
+
+\pdsetup{lf={Theory and Practice of Functional Programming}}
+
+\title{{\small \textsc{Theory and Practice of Functional Programming}}
+\\[12pt]
+{\Large \color{TitleColor} Simply Typed Lambda-Calculi (I)}
+}
+\author{\small \textbf{Dr. ZHANG Yu}
+  \\[2pt] \small Institute of Software, Chinese Academy of Sciences 
+  \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  \qquad \qquad 
+  \includegraphics[height=.04\slideheight]{cas.eps}
+}
+\date{\scriptsize GUCAS, Beijing}
+
+\newcommand{\RED}{\mathsf{RED}}
+
+\begin{document}
+
+\maketitle 
+
+\begin{slide}{Adding type information}
+\begin{itemize}
+%% \item Almost all modern programming languages are typed.
+%% \begin{itemize}
+%% \item A strong type system can detect many errors \emblue{statically}.
+%% \end{itemize}
+\item Adding types to $\lambda$-calculus:
+\[
+\tau ::= b \mid \emred{\tau \to \tau}
+\]
+\begin{itemize}
+\item The essential types are function types (also called arrow types). 
+\item We often define some basic types for data like integers, booleans, etc. 
+  $b$ ranges over a set of base types (type constants). 
+\item Terms are normally the same as in untyped $\lambda$-calculus, but in some systems we also 
+  write explicitly types for function arguments, i.e., $\lambda$-abstraction will be written as 
+  $ \lambda x : \tau \ldot e$
+\end{itemize}
+\item \emblue{Order} of types:
+\[
+\begin{array}{l}
+\ford(b) = 0 , \qquad \mbox{if $b$ is a base type} \\
+%% \ford(\tau_1 \times \tau_2) = \max(\ford(\tau_1), \ford(\tau_2)) \\
+%% \ford(\tau_1 + \tau_2) = \max(\ford(\tau_1), \ford(\tau_2)) \\
+\ford(\tau_1 \to \tau_2) = \max(\ford(\tau_1)+1, \ford(\tau_2))
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Type judgement}
+\begin{itemize}
+\item Type information of free variables are given by \emblue{typing contexts} and 
+the type of a complete term can be justified.
+\vspace*{-0.6em}
+\[
+x_1 : \tau_1,  \ldots, x_n : \tau_n \vdash e : \tau
+\vspace*{-1.5em}
+\]
+\item \emblue{Typing rules} justify the derivation of typing assertions.
+\[
+\begin{prooftree}
+x : \tau \in \Gamma
+\justifies
+\Gamma \vdash x : \tau 
+\end{prooftree}
+\qquad
+\begin{prooftree}
+\Gamma, x : \tau \vdash e : \tau' 
+\justifies
+\Gamma \vdash \lambda x: \tau \ldot e : \tau \to \tau'
+\end{prooftree}
+\qquad
+\begin{prooftree}
+\Gamma \vdash e : \tau' \to \tau
+\quad 
+\Gamma \vdash e' : \tau'
+\justifies
+\Gamma \vdash e\ e' : \tau
+\end{prooftree}
+\] 
+\item Type safety
+\begin{itemize}
+\item \emblue{Subject reduction}: reductions do not change the type of expressions: 
+For every expression $e$ such that $\Gamma \vdash e : \tau$ for some type $\tau$, 
+if $e \reduce e'$, then $\Gamma \vdash e' : \tau$. 
+\item \emblue{Progress}: all non-canonical closed terms can reduce. 
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{G\"odel's system T}
+\begin{itemize}
+\item Types: 
+\vspace*{-0.5em}
+\[
+\tau ::= \tnat \mid \tbool \mid \tau \to \tau 
+\vspace*{-1.5em}
+\]
+\item Terms: 
+\vspace*{-0.5em}
+\[
+e, e', \ldots ::= x \mid \lambda x \ldot e \mid e \ e' 
+\mid \csucc e \mid \czero \mid \mathtt{T} \mid \mathtt{F} \mid \mathtt{D}\  e\ e'\ e''
+\mid \mathtt{R}\ e\ e'\ e''
+\vspace*{-1em}
+\]
+\begin{itemize}
+\item $\mathtt O$ is the constant zero and $\mathtt S$ is the successor ($+1$) of type $\tnat \to \tnat$. 
+\\[0.2em]
+\item $\mathtt T, \mathtt F$ are boolean constants.
+\\[0.2em]
+\item $\mathtt D$ represents {\em if-then-else}:
+\vspace*{-0.5em}
+\[
+\mathtt{D} \ \mathtt{T} \ e_1 e_2 \reduce e_1 , \qquad
+\mathtt{D} \ \mathtt{F} \ e_1 e_2 \reduce e_2
+\vspace*{-1.5em}
+\]
+\item $\mathtt R$ is the primitive recursor:
+%  of type $\tnat \to \tau \to (\tnat \to \tau \to \tau) \to \tau$:
+\vspace*{-0.5em}
+\[
+\mathtt{R} \ \mathtt{O} \ g \ f \reduce g , \qquad
+\mathtt{R} \ (\mathtt{S}n) \ g \ f \reduce f \ n \ (\mathtt{R} \ n \ g \ f)
+\]
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Programming in system T}
+\begin{itemize}
+\item Addition
+$$\pmb{add} \defeq \lambda m \ldot \lambda n \ldot 
+\mathtt{R} \ n \ m \ (\lambda x \ldot \lambda r \ldot \mathtt{S} \ r)
+\vspace*{-2em}
+$$ 
+\item Iterator $\mathtt I$, which satisfies 
+$$ \mathtt I \ \mathtt{O} \ g \ f \reduce g , \qquad
+\mathtt{I} \ (\mathtt{S}n) \ g \ f \reduce f \ (\mathtt{R} \ n \ g \ f)
+$$ 
+Definition:
+$$
+\mathtt I \defeq \lambda n \ldot \lambda g \ldot \lambda f \ldot \mathtt{R} \ n \ g \ (\lambda x \ldot \lambda r \ldot f \ r)
+\vspace*{-2em}
+$$ 
+\item The function class that is defined by system T is \emblue{primitive recursive functions}.
+\begin{itemize}
+\item Other PR functions include exponentiation and primality testing.
+\item Using G\"odel numbering, we can operate on other objects like rational numbers.
+\item Typical non-PR function: Ackermann function.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Normal forms}
+A term is {\em normal} if it does not contain any redex.  
+$$\lambda x \ldot x, \quad \mathtt{S}, \quad \mathtt{S\ S\ O} \vspace*{-1em}$$
+\begin{itemize}
+\item \emblue{Head normal form (HNF)}: the out-most form is neither a redex nor an anstraction 
+  with a reducible body.
+\begin{itemize}
+\item Variables, e.g., $x$;
+\item Data values (constants), e.g., $\mathtt{O}, \mathtt{T}$;
+\item Applications that do not reduce, e.g, 
+  $x \ \mathtt{T} ,
+  \csucc (\mathtt{R} \ \mathtt{O} \ \mathtt{O} \ (\lambda x \ldot \lambda r \ldot x))$
+\item Abstractions with non-reducible bodies, e.g., 
+  $\lambda x \ldot \mathtt{S}, \lambda x \ldot \lambda y \ldot x \ y$.
+\end{itemize}
+\item \emblue{Weak head normal form (WHNF)}: either a HNF or an abstration (no matter whether its body is reducible or not). E.g., 
+  $\lambda x . \mathtt{R} \ \mathtt{O} \ \mathtt{T} \ x$.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Canonical forms}
+\begin{itemize}
+\item Every closed normal term $e$ of system T must be in either of the following forms:
+\begin{itemize}
+\item $\mathtt{S}^n (\mathtt O)$ if $e$ has type $\tnat$ and $n = 0, 1, 2, \ldots$;
+\item $\mathtt{T}$ or $\mathtt F$ if $e$ has type $\tbool$;
+\item $\lambda x \ldot e'$, if $e$ has type $\tau_1 \to \tau_2$.
+\end{itemize}
+These are called \emblue{canonical forms} of system T. \\
+The proof can be done by induction over structure of $e$.
+\item Canonical forms of base types are often considered as {\em values} of computations.
+\item All non-canonical closed terms can reduce.
+\end{itemize}
+\end{slide}
+
+
+\begin{slide}{Normalization}
+\begin{itemize}
+% \item A term is {\em normal} if none of its subterm is of the form $(\lambda x: \tau \ldot e) e'$.
+\item Normalization: Do normal forms always exist?
+\begin{itemize}
+\item \emblue{Weak normalization}: a term $e$ is {\em weakly normalizing} if there exists 
+  a \emred{finite} sequence of reduction $e \to e_1 \to \cdots \to e_n$ and $e_n$ is normal. 
+\\[0.2em]
+\item \emblue{Strong normalization}: a term $e$ is {\em strongly normalizing} if there is 
+  \emred{no infinite} sequence of reduction starting from $e$, i.e., 
+  every reduction sequence starting from $e$ is finite (terminating).
+\end{itemize}
+\item System T is strongly normalizing. 
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Proof of weak normalization}
+\emblue{Weak normalization}: for every term $e$, there exists a finite reduction sequence 
+$e = e_0 \to e_1 \to \cdots \to e_n$ where $e_n$ is normal.
+\vspace*{-0.5em}
+\begin{itemize}
+\item Observations
+\vspace*{-0.5em}
+\begin{itemize}
+\item Simple induction over term structure does not work, since $\beta$-reduction often 
+  breaks the structural induction. 
+\item We need to find something that \emred{strictly decreases} with each single-step reduction.
+\vspace*{-0.8em}
+\end{itemize}
+\item Degrees for terms and redexes
+\vspace*{-0.5em}
+\begin{itemize}
+\item Degree of redexes: \vspace*{-1.2em}
+\[
+\partial ((\lambda x \ldot e) e') \defeq \partial (\tau' \to \tau)
+\vspace*{-0.8em}
+\]
+where $\tau' \to \tau$ is the type of $\lambda x \ldot e$, and $\partial (\tau) $ is defined by
+\vspace*{-0.8em}
+\begin{eqnarray*}
+\partial(b) & \defeq & 1, \quad \mbox{($b$ a base type)} 
+\\
+\partial(\tau \to \tau') & \defeq & \max(\partial(\tau), \partial(\tau')) + 1 
+\\[-3.8em]
+\end{eqnarray*}
+\item Degree of terms: \vspace*{-0.8em}
+\[
+\delta(e) \defeq \max \set{\partial(r) \mid \mbox{$e$ is a redex and a subterm of $e$}}
+\]
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Proof of weak normalization}
+\begin{itemize}
+\item A few lemmas 
+\begin{itemize}
+\item[1.] If $x$ is of type $\tau$, then $\delta(e[t /x]) \leq  \max(\delta(e), \delta(t), \delta(\tau))$.
+\item[2.] If $e \to e'$, then $\delta(e') \leq \delta(e)$.
+\item[3.] Let $r$ be a redex in $e$ with the maximal degree $n$, and supppose all of its redexes 
+  have degrees that are strictly less than $n$. If $e'$ is the term obtained from $e$ 
+  by converting the redex $r$, then $e'$ has strictly fewer redexes of degree $n$ than $e$.
+\end{itemize}
+\item For every term $e$, the proof makes a \emred{double induction over $(n, m)$}, where 
+\[
+\emblue{n = \delta(e), \qquad m = \mbox{the number of redexes of degree $n$ in $e$} .}
+\]
+The induction order between the pairs is defined by 
+\[
+(n_1, m_2) < (n_2, m_2) \mbox{ iff } n_1 < n_2 \mbox{ or } (n_1 = n_2 \;\&\; m_1 < m_2).
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Proof of strong normalization}
+\emblue{Strong normalization}: every reduction sequence of every term $e$ is finite.
+\vspace*{-0.5em}
+\begin{itemize}
+\item Lemma: $e$ is strongly normalizing iff there exists a number $\nu(e)$ that bounds the length of 
+  every reduction sequence from $e$.
+\vspace*{-0.3em}
+\item Define a \emred{type-indexed} set $\RED_\tau$ of terms by:
+\vspace*{-0.5em}
+\begin{itemize}
+\item For a base type $b$, $e \in \RED_b$ if $e$ is strongly normalizing.
+\item For arrow types, $e \in \RED_{\tau \to \sigma}$ iff for every $t \in \RED_\tau$, $e\ t \in \RED_\sigma$.
+\vspace*{-0.5em}
+\end{itemize}
+\item A few properties about $\RED$:
+\vspace*{-0.5em}
+\begin{itemize}
+\item[P1:] If $e \in \RED$, then $e$ is S.N.
+\item[P2:] If $e \in \RED$ and $e \to e'$, then $e' \in \RED$.
+\item[P3:] If all term $e'$ such that $e \to e'$ are in $\RED$ and $e$ is not an abstraction, 
+  then $e \in \RED$.
+\vspace*{-0.5em}
+\end{itemize}
+\item The rest of the proof consists of proving two lemmas:
+\vspace*{-0.5em}
+\begin{itemize}
+\item If for every $t \in \RED$, $e[t / x] \in \RED$, then $\lambda x \ldot e \in \RED$.
+\item For all $e, t \in \RED$, $e[t / x] \in \RED$.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+
+\end{document}
+ 
+

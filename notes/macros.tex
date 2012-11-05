@@ -1,0 +1,160 @@
+\usepackage{latexsym,stmaryrd,amsmath,amsfonts}
+
+%% \newtheorem{definition}{Definition}
+%% \newtheorem{theorem}{Theorem}
+%% \newtheorem{lemma}{Lemma}
+\newtheorem{prop}{Proposition}
+%% \newtheorem{corollary}{Corollary}
+%% \newenvironment{proof}{{\sc Proof . }}{{\hfill $\square$}}
+%% \newcommand{\myqed}{\hfill $\square$}
+%% \newcommand{\ped}{\vspace{-1.6em}}
+%% \newcommand{\note}[1]{\noindent\fbox{\parbox{\textwidth}{\em #1}}}
+
+\newcommand{\abind}[2]{\mathtt{bind} \ (\, {#1} \,)  \ \mathtt{in} \ {#2}}
+\newcommand{\acase}{\mathtt{case}}
+\newcommand{\adv}{\mathcal{A}}
+\newcommand{\aspecto}[1]{\xrightarrow{\; {#1} \;}}
+\newcommand{\asplinear}{\mathfrak{l}}
+\newcommand{\aspmodal}{\mathfrak{m}}
+\newcommand{\aspnormal}{\mathfrak{n}}
+%
+\newcommand{\betareduce}{\leadsto_\beta}
+\newcommand{\betareduceto}{\twoheadrightarrow_\beta}
+\newcommand{\bit}{\mathtt{B}}
+\newcommand{\bitone}{\mathtt{B}_1}
+\newcommand{\bitzero}{\mathtt{B}_0}
+%
+\newcommand{\caseto}{\triangleright}
+\newcommand{\cbind}[3]{\mathtt{bind} \ {#1} = {#2} \ \mathtt{in} \ {#3}}
+\newcommand{\ccase}[4]{\mathtt{case} \; {#1} \; \mathtt{of} \; \cnil \caseto {#2}; \;
+                                          \bitzero x_0 \caseto {#3}; \; \bitone x_1 \caseto {#4}}
+\newcommand{\cequiv}{\simeq}
+\newcommand{\cif}[3]{\mathtt{if} \; {#1} \; \mathtt{then} \; {#2} \; \mathtt{else} \; {#3}}
+\newcommand{\ctrue}{\mathtt{true}}
+\newcommand{\cfalse}{\mathtt{false}}
+\newcommand{\cfix}{\mathtt{fix}\,}
+\newcommand{\cfixin}[2]{\mathtt{fix}\; {#1}\; \mathtt{in} \; {#2}}
+\newcommand{\cfold}{\mathtt{fold}\,}
+\newcommand{\chd}{\mathtt{hd}}
+\newcommand{\cinj}{\mathtt{inj}}
+\newcommand{\clift}[1]{\lfloor{#1}\rfloor}
+\newcommand{\clet}[3]{\mathtt{let} \ {#1} = {#2} \ \mathtt{in} \ {#3}}
+\newcommand{\cletst}[3]{\mathtt{liftlet} \ {#1} = {#2} \ \mathtt{in} \ {#3}}
+\newcommand{\cletrec}[3]{\mathtt{letrec} \ {#1} = {#2} \ \mathtt{in} \ {#3}}
+\newcommand{\cnil}{\mathtt{nil}}
+\newcommand{\conc}{\! \bullet \!}
+\newcommand{\concat}{\pmb{\mathit{conc}}}
+\newcommand{\context}{\mathbb{C}}
+\newcommand{\cop}{\;\mathtt{op}\;}
+\newcommand{\cpair}[1]{\langle{#1}\rangle}
+\newcommand{\cproj}{\mathtt{proj}}
+\newcommand{\crand}{\mathtt{rand}}
+\newcommand{\crec}{\mathtt{rec}}
+\newcommand{\croll}{\mathtt{roll}\,}
+\newcommand{\crule}[1]{\mbox{{\textsl{#1}}}}
+\newcommand{\cslrtype}{\Vdash}
+\newcommand{\csucc}{\mathtt{S}}
+\newcommand{\ctl}{\mathtt{tl}}
+\newcommand{\cut}{\pmb{\mathit{cut}}}
+\newcommand{\cval}{\mathtt{return}}
+\newcommand{\cwhile}[2]{\mathtt{while}\; {#1} \; \mathtt{do} \; {#2} \; \mathtt{od}}
+\newcommand{\cvalof}{\pmb{valueof}}
+\newcommand{\cunfold}{\mathtt{unfold}\,}
+\newcommand{\cunit}{\mathtt{unit}}
+\newcommand{\cunroll}{\mathtt{unroll}\,}
+\newcommand{\cupdate}{\pmb{update}}
+\newcommand{\czero}{\mathtt{O}}
+%
+\newcommand{\deduces}{\vdash}
+\newcommand{\defeq}{\stackrel{\mathrm{def}}{=}}
+\newcommand{\delay}[1]{\left\lfloor{#1}\right\rfloor}
+\newcommand{\distr}{\mathcal{D}}
+%
+\newcommand{\eagerreduce}{\xrightarrow{\mathrm{eager}}}
+\newcommand{\Eagerreduce}{\stackrel{\mathrm{eager}}{\Reduce}}
+\newcommand{\eqtest}{\stackrel{\mbox{\tiny ?}}{=}}
+\newcommand{\Eval}[1]{{\left\llbracket{#1}\right\rrbracket}}
+\newcommand{\evalcontext}{\mathbb{E}}
+\newcommand{\Example}{\emgreen{\pmb{\textsc{Example}\;}}}
+\newcommand{\expansion}[1]{\tilde{{#1}}}
+%
+\newcommand{\ford}{\mathrm{ord}}
+%
+\newcommand{\getval}{\leftarrow}
+%
+\newcommand{\head}{\pmb{\mathit{hd}}}
+\newcommand{\termhole}{[\;]}
+\newcommand{\hoaretriple}[3]{\{{#1}\} \; {#2} \; \{{#3}\}}
+%
+\newcommand{\imply}{\Rightarrow}
+\newcommand{\indist}{\simeq}
+\newcommand{\iteration}{\pmb{\mathit{it}}}
+%
+\newcommand{\lazyreduce}{\xrightarrow{\mathrm{lazy}}}
+\newcommand{\Lazyreduce}{\lazyreduce\!\!\!\!\!\to}
+\newcommand{\ldot}{\, . \, }
+\newcommand{\linearto}{\multimap}
+\newcommand{\logrel}{(\mathcal{R}_\tau)_{\mbox{$\tau$ type}}}
+\newcommand{\lr}[1]{\mathcal{R}_{#1}}
+\newcommand{\lub}{\sqcup}
+%
+\newcommand{\metalambda}{\underline{\lambda}}
+\newcommand{\modal}{\square}
+%
+\newcommand{\nat}{\mathbb{N}}
+\newcommand{\nReduce}{\nrightarrow\!\!\!\!\to}
+\newcommand{\nreduceto}{\nrightsquigarrow}
+\newcommand{\nullenv}{\varnothing}
+%
+\newcommand{\orc}{\mathcal{O}}
+\newcommand{\oslrtype}{\Vdash}
+%
+\newcommand{\porder}{\sqsubseteq}
+\newcommand{\prefix}{\pmb{\mathit{pref}}}
+\newcommand{\proba}{\mathbf{Pr}}
+%
+\newcommand{\randlen}{\pmb{\mathit{rl}}}
+\newcommand{\randnum}{\pmb{\mathit{rn}}}
+\newcommand{\randstr}{\pmb{\mathit{rs}}}
+\newcommand{\reduce}{\leadsto}
+\newcommand{\reduceto}{\rightsquigarrow\hspace*{-6px}\shortrightarrow}
+\newcommand{\Reduce}{\to\!\!\!\to}
+\newcommand{\Reduceto}{\Downarrow}
+%
+\newcommand{\set}[1]{\{{#1}\}}
+\newcommand{\setbits}{\mathbb{B}}
+\newcommand{\slrtype}{\vdash}
+\newcommand{\splt}{\pmb{\mathit{split}}}
+\newcommand{\suffix}{\pmb{\mathit{suff}}}
+\newcommand{\sysname}{\pmb{\mathcal{C}}}
+%
+\newcommand{\tail}{\pmb{\mathit{tl}}}
+\newcommand{\tbits}{\mathsf{Bits}}
+\newcommand{\tbool}{\mathsf{Bool}}
+\newcommand{\tnat}{\mathsf{Nat}}
+\newcommand{\tcomp}{\mathsf{T}}
+\newcommand{\tlift}[1]{\lfloor{#1}\rfloor}
+\newcommand{\tlist}{\mathsf{List}}
+\newcommand{\tself}{\mathsf{self}}
+\newcommand{\tstore}{\mathsf{Store}}
+\newcommand{\tstream}{\mathsf{Stream}}
+\newcommand{\tloc}{\mathsf{Loc}}
+\newcommand{\ttcase}{\mathtt{case}}
+\newcommand{\ttif}{\mathtt{if}}
+\newcommand{\ttthen}{\mathtt{then}}
+\newcommand{\ttelse}{\mathtt{else}}
+\newcommand{\ttin}{\mathtt{in}}
+\newcommand{\ttlet}{\mathtt{let}}
+\newcommand{\ttof}{\mathtt{of}}
+\newcommand{\tunit}{\mathsf{Unit}}
+\newcommand{\Type}{\mathcal{T}\!\mathit{ype}}
+%
+\newcommand{\vbool}{\pmb{\mathbb{B}}}
+\newcommand{\vff}{\mathfrak{f}\!\mathfrak{f}}
+\newcommand{\vnat}{\pmb{\mathrm{N}}}
+\newcommand{\vnil}{\epsilon}
+\newcommand{\vtt}{\mathfrak{t}\!\mathfrak{t}}
+%
+\newcommand{\weakpre}{\pmb{wp}}
+
+

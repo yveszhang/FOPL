@@ -1,0 +1,149 @@
+\NeedsTeXFormat{LaTeX2e}[1995/12/01]
+\ProvidesPackage{powerdot-zysimple}[2011/09/06 v1.0]
+% \RequirePackage{fontspec}
+% \RequirePackage{xetex-pstricks}
+\RequirePackage{times}
+\RequirePackage{calc}
+\RequirePackage{pifont}
+\RequirePackage{pst-grad}
+\RequirePackage{fancybox}
+\RequirePackage{fancyhdr}
+\RequirePackage{amssymb}
+
+% \newfontfamily{\comicsans}{Comic Sans MS}
+% \newfontfamily{\comicsansbf}{Comic Sans MS Bold}
+
+\newenvironment{wrap}{%
+  \vspace*{-1em}\begin{center}\small\rule{.6\textwidth}{1px}
+}{%
+  \rule{.6\textwidth}{1px}\vspace*{-1em}\end{center}
+}
+\newenvironment{smalltext}{\small}{\normalsize}
+\newenvironment{scripttext}{\scriptsize}{\normalsize}
+
+\newcommand{\emblue}[1]{\textcolor{blue}{#1}}
+\newcommand{\emdarkblue}[1]{\textcolor[rgb]{0,0,.8}{#1}}
+\newcommand{\emred}[1]{\textcolor{red}{#1}}
+\newcommand{\emdarkred}[1]{\textcolor[rgb]{.8,0,0}{#1}}
+\newcommand{\empink}[1]{\textcolor[rgb]{1,0,.5}{#1}}
+\newcommand{\emcyan}[1]{\textcolor{cyan}{#1}}
+\newcommand{\empurple}[1]{\textcolor{purple}{#1}}
+\newcommand{\emdarkgreen}[1]{\textcolor{DarkGreen}{#1}}
+\newcommand{\emgreen}[1]{\textcolor[rgb]{0,.5,0}{#1}}
+\newcommand{\emorange}[1]{\textcolor[rgb]{.9,.45,0}{#1}}
+\newcommand{\emhide}[1]{\textcolor[rgb]{.8,.8,.8}{#1}}
+\newcommand{\emlight}[1]{\textcolor{LightGray}{#1}}
+\newcommand{\emtest}[1]{\textcolor[rgb]{.9,0,.6}{#1}}
+
+\pddefinepalettes{default}{% Rembrandt van Rijn: "The Syndics" - 1662
+  \colorlet{pdcolor1}{black}
+  \definecolor{pdcolor2}{rgb}{1,1,1}
+  \definecolor{pdcolor3}{rgb}{1,1,1}
+  \definecolor{pdcolor4}{rgb}{1,1,1}
+  \definecolor{pdcolor5}{rgb}{1,1,1}
+  \definecolor{pdcolor6}{rgb}{1,1,1}
+  \definecolor{pdcolor7}{rgb}{1,1,1}
+  \definecolor{pdcolor8}{rgb}{1,1,1}
+  \definecolor{pdcolor9}{rgb}{1,1,1}
+  \definecolor{NormalColor}{rgb}{0.,0.,0.}
+  \definecolor{MainColor1}{rgb}{1,.35,0}
+  \definecolor{MainColor2}{rgb}{.52,.52,.5}
+  \definecolor{SidebarColor}{rgb}{0.1,0.1,0.4}
+  \definecolor{HeadColor}{rgb}{0.7,0.7,0.8}
+  \definecolor{FootColor}{rgb}{0.5,0.5,0.6}
+  \definecolor{HidingColor}{rgb}{0.7,0.7,0.8}
+  \definecolor{SectionColor}{rgb}{0.1,0.1,0.4}
+  \definecolor{DarkBlue}{rgb}{0.1,0.1,0.5}
+  \definecolor{DeepBlue}{rgb}{0.1,0.1,0.7}
+  \definecolor{bgsection}{rgb}{0.8,0.8,0.9}
+  \definecolor{bgsubsection}{rgb}{0.9,0.9,0.96}
+  \definecolor{DarkGray}{rgb}{0.3,0.3,0.3}
+  \definecolor{LightGray}{rgb}{0.8,0.8,0.7}
+  \definecolor{LightRed}{rgb}{1.,0.5,0.5}
+  \definecolor{LightGreen}{rgb}{0.9,1.,0.9}
+  \definecolor{LightBlue}{rgb}{0.5,0.5,1.}
+  \definecolor{DarkGreen}{rgb}{0.2,0.6,0.2}
+  \definecolor{emcolor-1}{rgb}{0.,0.5,0.5}
+  \definecolor{emcolor-3}{rgb}{0.,0.35,0.35}
+  \definecolor{emcolor-2}{rgb}{0.5,0.,0.5}
+  \definecolor{emcolor-4}{rgb}{0.35,0.,0.35}
+  \definecolor{purple}{rgb}{0.5,0.,0.5}
+  \definecolor{bluegreen}{rgb}{0.,0.5,0.5}
+  \colorlet{TitleColor}{DarkBlue}
+}
+\pddefinetemplate{titleslide}{
+  texthook=t,textpos={.5\slidewidth,.7\slideheight},
+  textwidth=.9\slidewidth,textfont=\centering\color{DarkGray},
+  textheight=.63\slideheight,
+  titlefont=\large\bfseries\centering,tocpos,ntocpos,stocpos
+}{%
+  \setlength\@tempdima{.8\slideheight+2pt}%
+  \psframe[fillstyle=gradient,gradbegin=LightGray,gradend=DeepBlue,%
+    gradangle=90,gradmidpoint=.5,linestyle=none,dimen=outer,linewidth=0pt]%
+    (0,.8\slideheight)(\slidewidth,\@tempdima)%
+  \setlength\@tempdima{.2\slideheight+2pt}%
+  \psframe[fillstyle=gradient,gradbegin=DeepBlue,gradend=LightGray,%
+    gradangle=90,gradmidpoint=.5,linestyle=none,dimen=outer,linewidth=0pt]%
+    (0,.2\slideheight)(\slidewidth,\@tempdima)%
+}
+%% \pddefinetemplate{titleslide}{
+%%   titlefont=\LARGE\sl\color{pdcolor4}\centering,
+%%   clockcolor=pdcolor4,clockpos={.99\slidewidth,\slideheight},
+%%   texthook=t,
+%%   textpos={.5\slidewidth,.65\slideheight},
+%%   textwidth=.8\slidewidth,
+%%   textfont=\large\color{pdcolor4}\centering,
+%%   textheight=.5\slideheight
+%% }{%
+%%   \psframe*[linecolor=pdcolor3](0,\slideheight)(\slidewidth,0)%
+%% }
+\pddefinetemplate{slide}{
+  titlepos={.5\slidewidth,.93\slideheight},
+  titlewidth=.95\slidewidth,
+  titlehook=c,
+  titlefont=\Large\bfseries\color{DeepBlue}\raggedright,
+  clockcolor=SectionColor,clockpos={.99\slidewidth,\slideheight},
+  textpos={.03\slidewidth,.87\slideheight},
+  textwidth=.94\slidewidth,
+  rfpos={.96\slidewidth,.015\slideheight},
+%  rftemp=\pd@@rf,
+  rffont=\scriptsize\color{FootColor},
+  lfpos={.03\slidewidth,.015\slideheight},
+  lftemp=\pd@@lf,
+  lffont=\scriptsize\color{FootColor},
+  textheight=.8\slideheight
+}{%
+  \psframe[fillstyle=solid,fillcolor=LightGray,linestyle=none,dimen=outer,linewidth=0pt]%
+  (0,.892\slideheight)(\slidewidth,.9\slideheight)%
+  %% \psframe[fillstyle=gradient,gradbegin=white,gradend=DarkBlue,%
+  %%   gradangle=90,gradmidpoint=.5,linestyle=none,dimen=outer,linewidth=0pt]%
+  %% (0,.89\slideheight)(\slidewidth,.9\slideheight)%
+  \psframe[fillstyle=gradient,gradbegin=MainColor2,gradend=white,%
+    gradangle=90,gradmidpoint=.5,linestyle=none,dimen=outer,linewidth=0pt]%
+  (0,.048\slideheight)(\slidewidth,.052\slideheight)%
+  %% \psframe[fillstyle=solid,fillcolor=MainColor1,linestyle=none,dimen=outer,linewidth=0pt]%
+  %% (.5\slidewidth,.048\slideheight)(\slidewidth,.052\slideheight)%
+  %% \rput(.5\slidewidth,.05\slideheight){
+  %%   \includegraphics[height=.02\slideheight]{iscas.eps}}
+}
+\pddefinetemplate[slide]{wideslide}{}{}
+\pddefinetemplate[titleslide]{sectionslide}{
+  titlehook=c,titlefont=\LARGE\bfseries\color{SectionColor}\centering,
+  titlepos={.5\slidewidth,.55\slideheight},
+  titlewidth=.8\slidewidth
+}{}
+\setkeys[pd]{section}{
+  sectemp=sectionslide,widesectemp=sectionslide
+}
+\def\labelitemi{\color{DarkBlue}\ensuremath\blacktriangleright}
+\def\labelitemii{\color{DarkBlue}\ensuremath-}
+\def\labelitemiii{\color{DarkBlue}\ensuremath\centerfot}
+\def\labelitemiv{\color{DarkBlue}\ensuremath\centerdot}
+\pdsetup{
+  list={labelsep=1em,leftmargin=*,itemsep=0pt,topsep=5pt,parsep=0pt},
+  dmaxheight=.85\slideheight
+}
+\def\familydefault{\sfdefault}
+\endinput
+%%
+%% End of file `powerdot-paintings.sty'.

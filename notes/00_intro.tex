@@ -1,0 +1,123 @@
+\documentclass[paper=screen,mode=present,style=zysimple]{powerdot}
+
+\pdsetup{lf={Theory and Practice of Functional Programming}}
+
+\title{{\small \textsc{Foundations of Programming Languages}}
+\\[12pt]
+{\Large \color{TitleColor} Theory and Practice of Functional Programming}
+}
+\author{\small \textbf{Dr. ZHANG Yu}
+  \\[2pt] \small Institute of Software, Chinese Academy of Sciences 
+  \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  \qquad \qquad 
+  \includegraphics[height=.04\slideheight]{cas.eps}
+}
+\date{\scriptsize Fall term, 2011 \qquad GUCAS, Beijing}
+
+\begin{document}
+
+\maketitle 
+
+%% \begin{slide}[toc=]{Outline}
+%% \tableofcontents
+%% \end{slide}
+
+\begin{slide}{Theory and Practice of Functional Programming}
+The course is officially entitled {\em Foundations of Programming Languages}, but since last year it focuses on 
+\emblue{functional programming} --- not just as a theoretical model for PLs, but also as practical languages 
+to build real applications.
+\begin{itemize}
+\item Functional languages are becoming popular in recent years and used to build real applications in industry:
+\begin{itemize}
+\item Erlang has been used for almost two decades in Ericsson; Twitter switched to scala a few years ago;  
+  part of Amazon Web Services is written in Erlang ...
+\item Finance industry starts to make intensive use of FPL: 
+  Erlang in Goldman Sachs and Deutsche Bank, Ocaml in Jane Street, Scala in UBS Investment Bank, 
+  F\# and Haskell in Credit Swiss, ...
+\end{itemize}
+\item Programming in FPL can help to understand abstract concepts in theory.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Why Haskell?}
+We shall use Haskell as the main language in the course (with a comparison to Ocaml).
+\begin{itemize}
+\item Haskell is known to be hard for non-FPL programmers.
+\item Haskell is rich, covering most theoretical concepts of FP and type systems.
+\item Haskell is a \emred{pure} functional language.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Course outline}
+10 lectures (3 hours each):
+\begin{itemize}
+\item \emblue{Foundation and theory} of FPL.
+\begin{itemize}
+\item Lambda-calculus, simple type theory, semantic model, modeling of imperative programs, ...
+\item Basic category concepts, monads, concurrency, ...
+\end{itemize}
+\item \emblue{Practical programming} using FPL.
+\begin{itemize}
+\item Programming in Haskell: lists, type classes, module systems, functors, ...
+\item Data structure and algorithms in FPL.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Schedule}
+\hspace*{4em}
+\begin{tabular}[b]{l || l }
+\hline \\[-0.8em]
+Week 1 & Lambda calculus
+\\[0.5em] \hline \\[-0.8em]
+Week 2  & Simply typed lambda-calculi (PCF)
+\\[0.5em] \hline \\[-0.8em]
+Week 3 & Type theory 
+\\[0.5em] \hline \\[-0.8em]
+Week 4 & Introduction to Haskell 
+\\[0.5em] \hline \\[-0.8em]
+Week 5, 6 & Functional data structure and algorithms
+\\[0.5em] \hline \\[-0.8em]
+Weak 7, 8 & Advanced Haskell programming 
+\\[0.5em] \hline \\[-0.8em]
+Weak 9 & Advanced topics in type theory
+\\[0.5em] \hline \\[-0.8em]
+Week 10 & Course review
+\\[0.5em] \hline 
+\end{tabular}
+\\
+This is a rough schedule --- after the introduction of Haskell, theory and programming practice will be mixed.
+\end{slide}
+
+\begin{slide}{Reference}
+\begin{itemize}
+\item There is no textbook for the course. I list some reference books on the course page:
+\begin{center}
+{\em \empurple{http://lcs.ios.ac.cn/\~{}yzhang/fopl/}}
+\end{center}
+More references will be given during the course and available on the page, 
+but you are also encouraged to do some research \emred{on your own}.
+\\
+Lecture notes and other material will  be download-able from the page.
+\item Me: \\
+I will be available for answering your questions {\em every Tuesday afternoon from 15:00 to 18:00}, 
+at \emblue{Room 315 of ISCAS building NO. 5}.
+\end{itemize}
+\end{slide}
+
+\begin{slide}[toc=]{Evaluation}
+Evaluation will base on 
+\begin{itemize}
+\item {\bf Projects}: there will be several programming pearls during the course, 
+  and one or two course projects on functional programming.
+  
+\item {\bf Final exam}: this consists of all the theoretical contents that are covered by the course, 
+  as well as functional programming concepts. \\
+  The exam will take place on \emred{Friday January 13, 2012}.
+\end{itemize}
+The two parts will be roughly half-half in your final score. 
+\end{slide}
+
+\end{document}
+ 
+

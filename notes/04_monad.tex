@@ -1,0 +1,473 @@
+\documentclass[paper=screen,mode=present,style=zysimple]{powerdot}
+
+\usepackage{fancyvrb,verbatim,listings,bbold}
+\usepackage{proof}
+\usepackage[all]{xypic,xy}
+
+\input{macros}
+
+\newcommand{\cate}{\mathcal C}
+
+\pdsetup{lf={Theory and Practice of Functional Programming}}
+
+\title{{\small \textsc{Theory and Practice of Functional Programming}}
+\\[12pt]
+{\Large \color{TitleColor} Denotations, Categories and Monads}
+}
+\author{\small \textbf{Dr. ZHANG Yu}
+  \\[2pt] \small Institute of Software, Chinese Academy of Sciences 
+  \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  \qquad \qquad 
+  \includegraphics[height=.04\slideheight]{cas.eps}
+}
+\date{\scriptsize Fall term, 2011 \qquad GUCAS, Beijing}
+
+\newcommand{\RED}{\mathsf{RED}}
+
+\begin{document}
+
+\maketitle 
+
+\begin{slide}{Denotations of programs}
+\begin{itemize}
+\item All programs in same line denote the same objects:
+\begin{itemize}\small
+\item $6$, $2 + 4$, $3 * 2$, ...
+\item $\ctrue$, $2 \eqtest 1 + 1$, $\cproj_1 \cpair{\ctrue, 0}$, ...
+\item $\lambda x \ldot x * 2$, $\lambda y \ldot y + y$, ...
+\item Various Haskell implementations of fibonacci function that we have seen.
+\end{itemize}
+\item A \emblue{denotational model (semantics)} assigns a (mathematical) object to each program. 
+\begin{itemize}
+\item Programs having the same denotation are considered as ``equivalent''.
+\item A naive model for typed $\lambda$-calculi is based on \emred{sets}.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+
+\begin{slide}{The set model for typed $\lambda$-calculi}
+\begin{itemize}
+\item The \emblue{set model} is a very basic denotational model
+% \vspace*{-0.5em}
+\item \emblue{Types} are denoted by \emblue{sets}
+% \vspace*{-0.6em}
+\begin{smalltext}
+\[
+\begin{array}{l}
+\Eval \tbool = \set{\vtt, \vff}, \quad 
+\Eval \tnat = \set{0, 1, 2, \ldots } 
+\\[0.3em]
+\Eval{\tau_1 \times \tau_2} = \set{(v_1, v_2) \mid v_1 \in \Eval{\tau_1}, v_2 \in \Eval{\tau_2}} 
+\\[0.3em]
+\Eval{\tau_1 + \tau_2} = \set{(\mathbb{1}, v) \mid v \in \Eval{\tau_1}} \cup \set{(\mathbb 2, v) \mid v \in \Eval{\tau_2}} 
+\\[0.3em]
+\Eval{\tau_1 \to \tau_2} = \set{f \mid \empurple{\mbox{$f$ is a function from $\Eval{\tau_1}$ to $\Eval{\tau_2}$}}}
+\end{array}
+\]
+\end{smalltext}
+\vspace*{-1em}
+\item \emblue{Programs} are interpreted as \emblue{functions} between sets
+\begin{itemize} \small
+\item $\Eval{x_1: \tau_1, \ldots, x_n: \tau_n \vdash e : \tau}$ is 
+  \empurple{a function from $\Eval{\tau_1} \times \cdots \times \Eval{\tau_n}$ to $\Eval \tau$}. 
+  \\
+  A closed term is a constant function that returns a fixed value of $\Eval \tau$.
+\item An \emblue{environment} (w.r.t. a typing context $\Gamma = \set{x_1 : \tau_1, \ldots, x_n : \tau_n}$) 
+  is a function that maps $x_1$ to an element in $\tau_i$.
+\item Given an environment $\rho$, \emblue{$\Eval e_\rho$} is the value comptued by applying the function  
+  $\Eval {\Gamma \vdash e: \tau}$ to the tuple $(\rho(x_1), \ldots, \rho(x_n))$, and $\Eval e_\rho \in \Eval \tau$.
+% \vspace*{-0.6em}
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+
+\begin{slide}{The set model for typed $\lambda$-calculi}
+\begin{itemize}
+\item Denotations of programs
+\[\small
+\begin{array}{l}
+\Eval{\ctrue}_\rho = \vtt, 
+\Eval{0}_\rho = 0, \Eval 1_\rho = 1, \ldots 
+\\[0.5em]
+\Eval{\cif{e}{e_1}{e_2}}_\rho = \left \{
+\begin{array}{l@{\quad}l}
+\Eval{e_1}_\rho, & \mbox{if $\Eval e_\rho = \vtt$} \\
+\Eval{e_2}_\rho, & \mbox{if $\Eval e_\rho = \vff$} \\
+\bot, & \mbox{otherwise}
+\end{array} 
+\right . 
+\\[1.8em]
+\Eval{\cpair{e_1, e_2}}_\rho = (\Eval{e_1}_\rho, \Eval{e_2}_\rho), \quad
+\Eval{\cproj_i e}_\rho = v_i \mbox{ (if $\Eval{e}_\rho = (v_1, v_2)$, $i = 1, 2$)}
+\\[0.5em]
+\Eval{\cinj_1(e)}_\rho = (\mathbb 1, \Eval{e}_\rho) ,
+\Eval{\cinj_2(e)}_\rho = (\mathbb 2, \Eval{e}_\rho) 
+\\[0.5em]
+\Eval{\mathtt{case} \; e \; \mathtt{of} \; \cinj_1 x_1 \; \mathtt{in} \; e_1 ; \cinj_2 x_2 \; \mathtt{in} \; e_2}_\rho = 
+\left \{
+\begin{array}{l@{\quad}l}
+\Eval{e_1}_{\rho[x_1 \mapsto v_1]}, & \mbox{if $\Eval e_\rho = (\mathbb 1, v_1)$} \\
+\Eval{e_2}_{\rho[x_2 \mapsto v_2]}, & \mbox{if $\Eval e_\rho = (\mathbb 2, v_2)$} \\
+\bot, & \mbox{otherwise}
+\end{array} 
+\right . 
+\\[1.8em]
+\Eval{e_1 \ e_2}_\rho = f(v), \mbox{ where $f = \Eval{e_1}_\rho, v = \Eval{e_2}_\rho$}
+\\[0.5em]
+\Eval{\lambda x : \tau' \ldot e}_\rho = f 
+\mbox{ such that \empurple{for every $v \in \Eval{\tau'}$, $f(v) = \Eval{e}_{\rho[x \mapsto v]}$}}
+\end{array}
+\vspace*{-1.5em}
+\]
+%% \item An element $v$ of $\Eval \tau$ is \emblue{definable} if there exists a PCF program $e$ of 
+%%   type $\tau$ such that $\Eval e = v$.
+\item Set model is not sufficient for interpreting recursions: \emred{NOT every function has a fix point}.
+\\
+PCF model needs more complex structure, e.g.,  \emblue{CPOs}. 
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Categories}
+\begin{itemize}
+\item Models of typed $\lambda$-calculi can be viewed with a more abstract and unified structure --- \emred{categories}.
+\item A category $\cate$ comprises 
+\begin{itemize}\small
+\item a collection of \emblue{objects};
+\item a collection of \emblue{morphisms} (between objects), and every morphism $f$ has 
+  a unique {\em source object} $A$ and {\em target object} $B$, written as $f: A \to B$. 
+  We write \emblue{$\cate[A, B]$} for the set of all morphisms from $A$ to $B$;
+\item a binary operation \emblue{$\circ$ (composition of morphisms)}: if $f: A \to B$ and  $g: B \to C$ are morphism, 
+  then $g \circ f$ is a morphism from $A$ to $C$. \\ 
+  $\circ$ is {\em associative}: if $f: A \to B$, $g: B \to C$ and $h: C \to D$ are morphism, 
+  then \empurple{$h \circ (g \circ f) = (h \circ g) \circ f$};
+\item an \emblue{identity morphism $\pmb{id}_X: X \to X$} (for every object $X$): for every morphism $f: A \to B$, 
+  \empurple{$\pmb{id}_B \circ f = f = f \circ \pmb{id}_A$}.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Category examples}
+\begin{itemize}
+\item Sets and total functions (\emblue{$\mathcal Set$}) \vspace*{-0.5em}
+\begin{itemize}\small
+\item sets are obejcts;
+\item total functions are morphisms, with their domains and codomains as source and target objects; 
+\item $\circ$ is function composition, which is associative;
+\item identity function for every set as identity morphisms. 
+\vspace*{-1em}
+\end{itemize}
+\item Sets and partial functions
+\item CPOs and continuous functions
+\item Groups and group homomorphisms
+\item Vector spaces and linear transforms
+\item \empurple{Types and terms in typed $\lambda$-calculi}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Cartesian closed categories (CCC)}
+% More constructions for interpreting typed $\lambda$-calculi:
+\begin{itemize}\small
+\item \emblue{Terminal object $1$}: for every object $A$, there is 
+  \empurple{exactly one morphism (denoted by $!$)} from $A$ to $1$.
+$$A \xrightarrow{\qquad ! \qquad} 1$$ \vspace*{-1.5em}
+\item \emblue{Product}: a product of two objects $A, B$ is an object \emblue{$A \times B$}, 
+  together with two {\em projection morphisms} \emblue{$\pi_1: A \times B \to A, \pi_2 : A \times B \to B$}, 
+  such that for every object $C$ and pair of morphisms $f: C \to A, g : C \to B$, 
+  there is exactly one {\em mediating morphisms} \emblue{$\cpair{f, g}: C \to A \times B$} 
+  making the following diagram commutes, 
+  i.e., \empurple{$\pi_1 \circ \cpair{f, g} = f, \pi_2 \circ \cpair{f, g} = g$}:
+$$
+\xymatrix@+=3pc{
+  & C \ar[dl]_{f} \ar[dr]^{g} \ar@{-->}[d]^{\cpair{f, g} }& \\
+  A & A \times B \ar[l]_{\quad \pi_1 \quad} \ar[r]^{\quad \pi_2 \quad} & B
+}
+$$
+If $f: A \to C, g: B \to D$ are two morphisms, we write $f \times g : A \times B \to C \times D$ 
+for the \emblue{product morphism $\cpair{f \circ \pi_1, g \circ \pi_2}$}.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Cartesian closed categories (CCC)}
+\begin{itemize}\small
+\item \emblue{Exponentiation}: an exponentiation object of two objects $A, B$ is an object $B^A$ 
+  together with an {\em evaluation morphism} \emblue{$\pmb{eval}_{AB}: B^A \times A \to B$}
+  such that for every object $C$ and morphism $g : C \times A \to B$, 
+  there is a unique morphism \emblue{$\pmb{curry}(g) : C \to B^A$} 
+  making the following diagram commutes:
+$$
+\xymatrix@+=3pc{
+  C \times A \ar[dr]^{g} \ar@{-->}[d]_{\pmb{curry}(g) \times \pmb{id}_A} & \\
+  B^A \times A \ar[r]^{\pmb{eval}_{AB}} & B
+}
+$$
+That is: \empurple{$\pmb{eval}_{AB} \circ (\pmb{curry}(g) \times \pmb{id}_A) = g$}.
+\item A \emred{cartesian closed category (CCC)} is a category 
+  with a terminal object, products, and exponentiation.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Modeling typed $\lambda$-calculli in CCC}
+\begin{itemize}
+\item Types as objects 
+$$\small
+\begin{array}{lcl}
+\Eval{\tunit} & \defeq & 1 \\
+\Eval{\tau_1 \times \tau_2} & \defeq & \Eval{\tau_1} \times \Eval{\tau_2} \\
+\Eval{\tau_1 \to \tau_2} & \defeq & \Eval{\tau_2}^{\Eval{\tau_1}}
+\end{array}
+$$\vspace*{-0.5em}
+\item Programs as morphisms
+\begin{itemize}\small
+\item Typing contexts as products
+$$\small
+\begin{array}{lcl}
+\Eval{\emptyset} & \defeq & 1 \\
+\Eval{\Gamma, x : \tau} & \defeq & \Eval\Gamma \times \Eval{\tau}
+\end{array}
+$$
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Modeling typed $\lambda$-calculli in CCC}
+\begin{itemize}
+\item Programs as morphisms
+\end{itemize}
+$$\small
+\begin{array}{lcl}
+\Eval{\Gamma \vdash * : \tunit} & \defeq & ! : \Eval{\Gamma} \to 1 
+\\[0.2em]
+\Eval{x_1 : \tau_1, \ldots, x_n : \tau_n \vdash x_i : \tau_i} & \defeq & 
+\pi_i : \Eval{\tau_1} \times \cdots \times \Eval{\tau_n} \to \Eval{\tau_i}
+\\[0.2em]
+\Eval{\Gamma \vdash \lambda x \ldot e : \tau \to \tau'} & \defeq & 
+\pmb{curry}(\Eval{\Gamma, x : \tau' \vdash e : \tau}) : \Eval{\Gamma} \to \Eval{\tau}^{\Eval{\tau'}}
+\\[0.2em]
+\Eval{\Gamma \vdash e_1 \ e_2 : \tau} & \defeq & 
+\pmb{eval}_{\Eval{\tau'} \Eval{\tau}} \circ \cpair{\Eval{\Gamma \vdash e_1 : \tau' \to \tau}, \Eval{\Gamma \vdash e_2 : \tau'}}
+\\[0.1em]
+& & \qquad : \Eval{\Gamma} \to \Eval{\tau} 
+\\[0.2em]
+\Eval{\Gamma \vdash \cpair{e_1, e_2} : \tau_1 \times \tau_2} & \defeq &
+\cpair{\Eval{\Gamma \vdash e_1 : \tau_1}, \Eval{\Gamma \vdash e_2 : \tau_2}} 
+: \Eval{\Gamma} \to \Eval{\tau_1} \times \Eval{\tau_2}
+\\[0.2em]
+\Eval{\Gamma \vdash \cproj_1{e} : \tau_1} & \defeq &
+\pi_1 \circ \Eval{\Gamma \vdash e : \tau_1 \times \tau_2} : \Eval{\Gamma} \to \Eval{tau_1}
+\\[0.2em]
+\Eval{\Gamma \vdash \cproj_2{e} : \tau_2} & \defeq &
+\pi_2 \circ \Eval{\Gamma \vdash e : \tau_1 \times \tau_2} : \Eval{\Gamma} \to \Eval{tau_2}
+\\[0.2em]
+ & \cdots & \cdots
+\end{array}
+$$
+\end{slide}
+
+\begin{slide}{The computational $\lambda$-calculus}
+\begin{itemize}
+\item A nice framework for \empurple{modeling imperative features in pure functional language} \emgreen{[Moggi'89]}. 
+\item Typed $\lambda$-calculus with specfic types for (imperative) computations.
+\begin{itemize} \small
+\item Types: \vspace*{-0.8em}
+$$\tau, \tau', \ldots ::= b \mid \tau \to \tau \mid \ldots \mid \emred{\tcomp \tau} $$
+$\tcomp \tau$ is the type for \emblue{computations that can return values of type $\tau$}. 
+\item Terms: \vspace*{-0.8em}
+$$ 
+e, e', \ldots ::= c \mid \lambda x \ldot e \mid e \ e' \mid \ldots \mid \emred{\cval(e)} 
+\mid  \emred{\cbind{x}{e}{e'}} 
+\vspace*{-0.5em}
+$$
+$\cval(e)$ is the \emblue{trivial computation} that does nothing but returns $e$ directly; 
+$\cbind{x}{e}{e'}$ is the \emblue{sequential computation} that 
+executes the computation $e$ first, binds its value to $x$ and executes the computation $e'$.
+\item Typing rules:
+$$
+\prooftree
+\Gamma \vdash e : \tau 
+\justifies 
+\Gamma \vdash \cval(e) : \tcomp \tau 
+\endprooftree
+\qquad
+\prooftree
+\Gamma \vdash \emred{e : \tcomp \tau} 
+\quad 
+\Gamma, \emred{x : \tau} \vdash e' : \tcomp \tau'
+\justifies 
+\Gamma \vdash \cbind x e {e'} : \tcomp \tau'
+\endprooftree
+$$
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Modeling imperative computations}
+\begin{itemize}\small
+\item Non-termination \vspace*{-0.6em} 
+\begin{itemize}
+\item $\tcomp \tau \defeq \emblue{\tau + \tunit}$: a computation may terminate and return a value of $\tau$, 
+  or may not terminate, which is the $\tunit$ case (recall the lifted type that we introduce in PCF store).
+\item $\cval(e)$ always teminates and returns the value $e$.
+\item $\cbind x e {e'}$ can teminate if both $e$ and $e'$ do, and the final result is the one returned by $e'$; 
+  if either of $e, e'$ does not terminate, neither does the entire program. 
+\vspace*{-0.8em}
+\end{itemize}
+\item Exceptions \vspace*{-0.6em}
+\begin{itemize}\small
+\item $\tcomp \tau \defeq \emblue{\tau + E}$ ($E$ is the type of all exceptions): a computation may return normally 
+  or throw an exception. 
+\item $\cval(e)$ always returns normal value $e$.
+\item $\cbind x e {e'}$: if $e$ returns normally then the program continues with $x$ being replaced by the returned value;
+  otherwise, when $e$ throws an exception the program stops with that exception. 
+\vspace*{-0.6em}
+$$
+\prooftree
+\Gamma \vdash e: E 
+\justifies 
+\Gamma \vdash \mathtt{throw}_\tau (e) : \tcomp \tau 
+\endprooftree
+\qquad
+\prooftree
+\Gamma \vdash e : \tcomp \tau 
+\quad 
+\Gamma \vdash e' : E \to \tcomp \tau
+\justifies 
+\mathtt{catch} \; e \; \mathtt{with} \; e' : \tcomp \tau
+\endprooftree
+$$
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Modeling imperative computations}
+\begin{itemize}\small
+\item Stateful computations \vspace*{-0.6em}
+\begin{itemize}
+\item $\tcomp \tau \defeq \emblue{S \to S \times \tau}$ ($S$ is the type of all states): a computation always 
+  executes in a given state and returns a value plus a new state.
+\item $\cval(\tau)$ returns the value $e$ and the same state as it receives.
+\item $\cbind x e {e'}$ starts the computation $e$ in state $s_0$, which returns a value $v$ and a new state $s_1$, 
+  then starts the computation $e''$ in state $s_1$ with $x$ being replaced by $v$.
+\item Modeling imperative programs (WHILE) with state monad: \vspace*{-0.5em}
+$$
+\prooftree
+\justifies 
+\Gamma \vdash \pmb{valueof} : \tloc \to \emred{\tcomp \tnat}
+\endprooftree
+\qquad 
+\prooftree
+\justifies 
+\Gamma \vdash \pmb{update} : \tloc \to \tnat \to \emred{\tcomp \tunit}
+\endprooftree
+$$
+Interpretation of expressions are of type $\tcomp \tnat$, which do not change states, 
+and commands are $\tcomp \tunit$, which modify states:
+$$
+\begin{array}{lcl}
+\Eval{x := E} & \defeq & \cbind {v} {\Eval E} {\pmb{update}(\Eval{x}, v)} 
+\\[0.2em]
+\Eval{P_1 ; P_2} & \defeq & \cbind {\_} {\Eval{P_1}} {\Eval{P_2}}
+\end{array}
+$$
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Functors and natural tranformations}
+\begin{itemize}\small
+\item A \emblue{functor} $F : \mathcal C \to \mathcal D$ ($\mathcal C, \mathcal D$ are categories) is a map 
+taking each $\mathcal C$-object $A$ to a $\mathcal D$-object $F(A)$, and each $\mathcal C$-morphism $f: A \to B$ 
+to a $\mathcal D$-morphism $F(f) : F(A) \to F(B)$, such that for all $\mathcal C$-objects $A$ and composable 
+$\mathcal C$ morphisms $f$ and $g$, \vspace*{-0.6em}
+\begin{itemize}
+\item \emblue{$F(\pmb{id}_A) = \pmb{id}_{F(A)}$} and 
+\item \emblue{$F(g \circ f) = F(g) \circ F(f)$}. 
+\vspace*{-0.6em}
+\end{itemize}
+Type constructors in programming languages are typical functors. 
+\item Let $\mathcal C, \mathcal D$ be categories, and $F, G$ be functors from $\mathcal C$ to $\mathcal D$. 
+a \emblue{natural transformation} $\eta$ from $F$ to $G$ (written $\eta: F \to G$) is a function that assigns 
+to every $\mathcal C$-object $A$ a $\mathcal D$-morphism $\eta_A: F(A) \to G(A)$, 
+such that for every $\mathcal C$-morphism $f: A \to B$, the following diagram commutes in $\mathcal D$:
+$$
+\xymatrix@+=3pc{
+  F(A) \ar[r]^{\eta_A} \ar[d]_{F(f)} &  G(A) \ar[d]^{G(f)} \\
+  F(B) \ar[r]^{\eta_B} & G(B)
+}
+$$
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Monads}
+\begin{itemize}
+\item A \emblue{monad} on a category $\mathcal C$ is a tuple $(T, \eta, \mu)$
+\begin{itemize}
+\item $T: \mathcal C \to \mathcal C$ is a functor from $\mathcal C$ to itself;
+\item $\eta: 1_{\mathcal C} \to T$ is a natural transformation from identity functor $1_{\mathcal C}$ to $T$;
+\item $\mu: T^2 \to T$ is a natural transformation from functor $T \circ T$ to $T$;
+\item the following two diagrams commute:
+$$
+\xymatrix@+=3pc{
+  T^3 \ar[r]^{T \mu} \ar[d]_{\mu_T} &  T^2 \ar[d]^{\mu} \\
+  T^2 \ar[r]^{\mu} & T
+}
+\qquad 
+\xymatrix@+=3pc{
+  &  T \ar[dl]_{T \eta} \ar@{=}[d] \ar[dr]^{\eta_T} & \\
+  T^2 \ar[r]^{\mu} & T & T^2 \ar[l]_{\mu}
+}
+$$
+i.e., $\mu \circ T \mu = \mu \circ \mu_T$ and $\mu \circ T \eta = \mu \circ \eta_T$.
+\item A \emblue{strong monad} is also equipped with a morphism 
+  \emblue{$\pmb{t}_{A,B}: A \times T B \to T (A \times B)$} for every pair of objects $A, B$.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Interpreting the computational $\lambda$-calculus}
+\begin{itemize}
+\item The computational $\lambda$-calculus is interpreted in a CCC with a \emblue{strong monad} 
+  $(T, \eta, \mu, \pmb{t})$.
+\begin{itemize} \small
+\item Computation types
+$$\Eval {\tcomp \tau} \defeq T \Eval{\tau} 
+\vspace*{-1.5em}
+$$
+\item Trivial computations \vspace*{-0.6em}
+$$
+\Eval{\Gamma \vdash \cval(e) : \tcomp \tau} \defeq
+\eta_{\Eval \tau} \circ \Eval{\Gamma \vdash e : \tau} 
+\vspace*{-1em}
+$$ 
+$$
+\xymatrix@+=3pc{
+  \Eval \Gamma \ar[r] ^{\Eval{\Gamma \vdash e: \tau}} & \Eval \tau \ar[r]^{\eta_{\Eval \tau}} & T \Eval \tau 
+}
+\vspace*{-1.5em}
+$$
+\item Sequential computations \vspace*{-0.6em}
+$$
+\begin{array}{l}
+\Eval{\Gamma \vdash \cbind x e {e'} : \tcomp \tau'} \defeq 
+\\ \qquad\qquad
+\mu_{\Eval{\tau'}} \circ T \Eval{\Gamma, x: \tau \vdash e' : \tau'} \circ \pmb{t}_{\Eval\Gamma, \Eval \tau}
+\circ \cpair{\pmb{id}_{\Eval \Gamma}, \Eval{\Gamma \vdash e : \tau}}  
+\end{array}
+$$
+$$\small
+\xymatrix@C=2.5pc@R=1.5pc{
+  \Eval \Gamma \ar[d]_{\cpair{\pmb{id}, \Eval{\Gamma \vdash e: \tau}}} & & & T \Eval{\tau'} 
+  \\
+  \Eval \Gamma  \times T \Eval \tau \ar[r]^(.48){\pmb{t}_{\Eval \Gamma, \Eval \tau}} 
+  & T (\Eval \Gamma \times \Eval \tau) \ar[rr]^(.52){T \Eval{\Gamma, x: \tau \vdash e': \tcomp \tau'}} 
+  & & T T \Eval{\tau'} \ar[u]_{\mu_{\Eval{\tau'}}} 
+}
+$$
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\end{document}
+ 
+

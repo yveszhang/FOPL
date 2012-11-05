@@ -1,0 +1,133 @@
+\documentclass{beamer}
+
+\usepackage{fontspec}
+\newfontfamily{\monaco}{Monaco}
+\newfontfamily{\comicsans}{Comic Sans MS}
+\newfontfamily{\comicsansbf}{Comic Sans MS Bold}
+
+% \pdsetup{lf={Theory and Practice of Functional Programming}}
+\useinnertheme[shadow]{rounded}
+\useoutertheme{infolines}
+
+\setbeamertemplate{frametitle}{
+  \comicsansbf{\insertframetitle}
+}
+\title[Foundations of Programming Languages]{
+{\small \textcolor{black}{\textsc{Foundations of Programming Languages}}} \\[1em]
+\comicsansbf{Theory and Practice of Functional Programming}
+}
+\author[Y. ZHANG]{\monaco{Dr. ZHANG Yu}}
+\institute[ISCAS]{Institute of Software, Chinese Academy of Sciences}
+  %% \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  %% \qquad \qquad 
+  %% \includegraphics[height=.04\slideheight]{cas.eps}
+\date[GUCAS 2011]{Fall term, 2011 \qquad GUCAS, Beijing}
+
+\begin{document}
+
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+%% \begin{frame}[toc=]{Outline}
+%% \tableofcontents
+%% \end{frame}
+
+\begin{frame}{Theory and Practice of Functional Programming}
+The course is officially entitled {\em Foundations of Programming Languages}, but I decided to focus on 
+\emph{functional languages} this year --- not just as a theoretical model for PLs, but also as practical languages 
+to build real applications.
+\begin{itemize}
+\item Functional languages are becoming popular in recent years and used to build real applications in industry:
+\begin{itemize}
+\item Erlang has been used for almost two decades in Ericsson; Twitter switched to scala two years ago;  
+  part of Amazon Web Services is written in Erlang ...
+\item Finance industry starts to make intensive use of FPL: 
+  Erlang in Goldman Sachs and Deutsche Bank, Ocaml in Jane Street, Scala in UBS Investment Bank, 
+  F\# and Haskell in Credit Swiss, ...
+\end{itemize}
+\item Programming in FPL can help to understand abstract concepts in theory.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Why Haskell?}
+We shall use Haskell as the main language in the course (with a comparison to Ocaml).
+\begin{itemize}
+\item Haskell is known to be hard for non-FPL programmers.
+\item Haskell is rich, covering almost all theoretical concepts that we will introduce in the course.
+\item Haskell is a pure functional language --- it is \emph{elegant}!
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Course outline}
+10 lectures in 3 parts:
+\begin{itemize}
+\item \emph{Foundation and theory} of FPL.
+\begin{itemize}
+\item Lambda-calculus, simple type theory, semantic model, modeling of imperative programs, ...
+\item Basic category concepts, monads, concurrency, ...
+\end{itemize}
+\item \emph{Practice programming} using FPL.
+\begin{itemize}
+\item Programming in Haskell: lists, type classes, module systems, functors, ...
+\item Data structure and algorithms in FPL.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Schedule}
+\hspace*{4em}
+\begin{tabular}[b]{l || l }
+\hline \\[-1em]
+Week 1 & Lambda calculus
+\\[0.2em] \hline \\[-1em]
+Week 2  & Simply typed lambda-calculi (PCF)
+\\[0.2em] \hline \\[-1em]
+Week 3 & Type theory 
+\\[0.2em] \hline \\[-1em]
+Week 4 & Introduction to Haskell 
+\\[0.2em] \hline \\[-1em]
+Week 5, 6 & Functional data structure and algorithms
+\\[0.2em] \hline \\[-1em]
+Weak 7, 8 & Advanced Haskell programming 
+\\[0.2em] \hline \\[-1em]
+Weak 9 & Advanced topics in type theory
+\\[0.2em] \hline \\[-1em]
+Week 10 & Course review
+\\[0.2em] \hline 
+\end{tabular}
+\\
+This is a rough schedule --- after the introduction of Haskell, theory and programming practice will be mixed.
+\end{frame}
+
+\begin{frame}{Reference}
+\begin{itemize}
+\item There is no textbook for the course. I list some reference books on the course page:
+\begin{center}
+\url{http://lcs.ios.ac.cn/\~yzhang/fopl/}
+\end{center}
+More references will be given during the course and available on the page, 
+but you are also encouraged to do some research \emph{on your own}.
+\\
+Lecture notes and other material will  be download-able from the page.
+\item Me: \\
+I will be available for answering your questions {\em every Tuesday afternoon from 15:00 to 18:00}, 
+at \emph{Room 315 of ISCAS building NO. 5}.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Evaluation}
+Evaluation will base on 
+\begin{itemize}
+\item {\bf Projects}: there will be small projects on functional programming. 
+  You will do some implementation and make short reports. 
+\item {\bf Final exam}: this consists of all the theoretical contents that are covered by the course, 
+  as well as functional programming concepts. \\
+  The exam will take place on \emph{Friday January 13, 2012}.
+\end{itemize}
+\end{frame}
+
+\end{document}
+ 
+

@@ -1,0 +1,507 @@
+\documentclass[paper=screen,mode=present,style=zysimple]{powerdot}
+
+\usepackage{fancyvrb,verbatim,listings}
+\usepackage{proof}
+\usepackage[all]{xypic,xy}
+
+\input{macros}
+
+\pdsetup{lf={Theory and Practice of Functional Programming}}
+
+\title{{\small \textsc{Theory and Practice of Functional Programming}}
+\\[12pt]
+{\Large \color{TitleColor} Imperative Languages and Monads}
+}
+\author{\small \textbf{Dr. ZHANG Yu}
+  \\[2pt] \small Institute of Software, Chinese Academy of Sciences 
+  \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  \qquad \qquad 
+  \includegraphics[height=.04\slideheight]{cas.eps}
+}
+\date{\scriptsize Fall term, 2012 \qquad GUCAS, Beijing}
+
+\newcommand{\RED}{\mathsf{RED}}
+
+\begin{document}
+
+\maketitle 
+
+\begin{slide}{A toy imperative language WHILE}
+WHILE is a simple imperative language for developing analysis technique for imperative programs.
+\begin{itemize}
+\item Expressions
+\begin{itemize}
+\item Integer expressions
+\vspace*{-0.5em}
+\[
+E_n ::= x \mid 0 \mid 1 \mid \ldots \mid E_n \cop E_n 
+\vspace*{-1.6em}
+\]
+\item Boolean expressions
+\vspace*{-0.5em}
+\[
+E_b ::= \ctrue \mid \cfalse \mid E_n \eqtest E_n 
+\vspace*{-0.6em}
+\]
+\end{itemize}
+\item Programs 
+\vspace*{-0.5em}
+\[
+\begin{array}{lrll}
+P & ::= & x := E_n  & \mbox{assignment} 
+\\[0.3em] & \mid & 
+P; P & \mbox{sequential}
+\\[0.3em] & \mid & 
+\cif{E_b}{P}{P} & \mbox{conditional} 
+\\[0.3em] & \mid & 
+\cwhile{E_b}{P} & \mbox{while-loop}
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}[method=direct]{Stores and locations}
+\begin{itemize}
+\item The execution of a WHILE program depends on the \emblue{store} (or memory) which feeds 
+  the variables with concrete values. \\[0.3em]
+\item A variable is essentially a \emblue{location} in the store.
+\vspace*{-0.5em}
+\[
+x := y + 3
+\vspace*{-0.6em}
+\]
+\begin{itemize}
+\item Get the value from {\em location \verb|y|} and put it in a register;
+\item Add 3 to the register;
+\item Store the context of register into {\em location \verb|x|}.
+\end{itemize}
+\item L-value and R-value
+\begin{itemize}
+\item L-value: the location of the variable \\[0.2em]
+\item R-value: the content in the store location of the variable
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Evaluation of expressions}
+The evaluation of WHILE expressions depends on the store. 
+\begin{itemize}
+\item We simply regard variables in WHILE programs as locations. \\
+\item \emblue{$\pmb{valueof}$}: 
+  $\pmb{valueof}(S, x)$ is the value of the variable $x$ in the store $S$. \\
+\item Evaluation of expressions: $\reduce \, \subseteq (Store \times Exp) \times Value$:
+\[
+\begin{array}{l}
+(S, x) \reduce \pmb{valueof}(S, x) 
+, \quad (S, n) \reduce n \\[0.3em]
+(S, E_1 \cop E_2) \reduce n, 
+\mbox{ if } (S, E_1) \reduce n_1, (S, E_2) \reduce n_2 \mbox{ and } n = n_1 \cop n_2 \\[0.3em]
+(S, \ctrue) \reduce \vtt 
+, \quad (S, \cfalse) \reduce \vff \\[0.3em]
+(S, E_1 \eqtest E_2) \reduce \ctrue, \mbox{ if } (S, E_1) \reduce n, (S, E_2) \reduce n \\[0.3em]
+(S, E_1 \eqtest E_2) \reduce \ctrue, \mbox{ if } (S, E_1) \reduce n_1, (S, E_2) \reduce n_1 \mbox{ and } n_1 \neq n_2 
+\end{array}
+\]
+% The store $S$ is much like the environment in the denotational semantics of PCF.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Small-step semantics}
+Small-step operational semantics: 
+% It is a relation between programs (w.r.t. stores): \vspace*{-0.5em}
+\[
+\Rightarrow \, \subseteq (Store \times Program) \times (Store \times Program) .
+\vspace*{-1em}
+\]
+\begin{itemize}
+\item It defines the execution of programs, {\em step by step}. \\
+\item Final state $(S, \bullet)$: $\bullet$ stands for a null program. It also indicates \emred{termination}. \\
+\item \emblue{$\pmb{update}(S, x, v)$}: a new store obtained from $S$ with the location $x$ containing value $v$. \\
+\item Assignment: 
+\[
+\begin{prooftree}
+(S, E) \reduce v  
+\quad \pmb{update}(S, x, v) = S'
+\justifies
+(S, x := E) \Rightarrow (S', \bullet)
+\end{prooftree}
+\vspace*{-1.5em}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Small-step semantics}
+\begin{itemize}
+\item Conditional: 
+\[\small
+\begin{array}{c}
+\begin{prooftree}
+(S, E) \reduce \ctrue
+\justifies
+(S, \cif{E}{P_1}{P_2}) \Rightarrow (S, P_1)
+\end{prooftree}
+\quad
+\begin{prooftree}
+(S, E) \reduce \cfalse
+\justifies
+(S, \cif{E}{P_1}{P_2}) \Rightarrow (S, P_2)
+\end{prooftree}
+\end{array}
+\vspace*{-1.5em}
+\]
+\item Sequential:
+\[\small
+\begin{prooftree}
+(S, P_1) \Rightarrow (S', \bullet)
+\justifies
+(S, P_1 ; P_2) \Rightarrow (S', P_2)
+\end{prooftree}
+\vspace*{-1.5em}
+\]
+\item WHILE-loop:
+\[\small
+\begin{array}{c}
+\begin{prooftree}
+(S, E) \reduce \cfalse
+\justifies
+(S, \cwhile{E}{P}) \Rightarrow (S, \bullet)
+\end{prooftree}
+\\[1.8em]
+\begin{prooftree}
+(S, E) \reduce \ctrue
+\justifies
+(S, \cwhile E P) \Rightarrow (S, P; \cwhile{E}{P})
+\end{prooftree}
+\end{array}
+\vspace*{-0.5em}
+\]
+The evaluation of WHILE-loop is a loop \emblue{unfolding} process. 
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Big-step semantics}
+Big-step operational semantics:
+$$
+\Reduceto \subseteq (Store \times Program) \times Store
+\vspace*{-1em}
+$$
+\begin{itemize}
+\item It defines the final store after program execution (w.r.t. an initial store). \\
+\item Assignment:
+\[
+\begin{prooftree}
+(S, E) \reduce v  
+\quad \pmb{update}(S, x, v) = S'
+\justifies
+(S, x := E) \Reduceto S'
+\end{prooftree}
+\]
+\item Conditional:
+\[
+\begin{prooftree}
+(S, E) \reduce \ctrue
+\quad (S, P_1) \Reduceto S'
+\justifies
+(S, \cif{E}{P_1}{P_2}) \Reduceto S'
+\end{prooftree}
+\qquad 
+\begin{prooftree}
+(S, E) \reduce \cfalse
+\quad (S, P_2) \Reduceto S'
+\justifies
+(S, \cif{E}{P_1}{P_2}) \Reduceto S'
+\end{prooftree}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Big-step semantics}
+% The big-step semantics
+\begin{itemize}
+\item Sequential:
+\[
+\begin{prooftree}
+(S, P_1) \Reduceto S_1
+\quad (S_1, P_2) \Reduceto S_2
+\justifies
+(S, P_1 ; P_2) \Reduceto S_2
+\end{prooftree}
+\vspace*{-0.5em}
+\]
+\item WHILE-loop:
+\[
+\begin{prooftree}
+(S, E) \reduce \cfalse
+\justifies
+(S, \cwhile{E}{P}) \Reduceto S
+\end{prooftree}
+\]
+\[
+\begin{prooftree}
+(S, E) \reduce \ctrue
+\quad (S, P) \Reduceto S'
+\quad (S', \cwhile{E}{P}) \Reduceto S''
+\justifies
+(S, \cwhile E P) \Reduceto S''
+\end{prooftree}
+\vspace*{-1.5em}
+\]
+\item Termination: \\
+\begin{itemize}
+\item Big-step evaluation implicitly assumes termination: 
+  if $(S, P) \Reduceto S'$, then $P$ necessarily terminates.
+\item Small-step evaluation does not assume termination.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}[method=direct]{Example}
+\scriptsize
+\begin{verbatim}
+        x := 5 ;
+        y := 1;
+        while (x > 0) do 
+          y := x * y;
+          x := x - 1;
+        od 
+\end{verbatim}
+\normalsize
+\begin{itemize}
+\item Small-step evaluation
+\vspace*{-0.6em}
+\[\scriptsize
+\begin{array}{rll}
+ & (\set{x : 0, y : 0}, x := 5; y := 1; \cwhile{x > 0}{\ldots})
+\\ \Rightarrow & 
+(\set{x : 5, y : 0}, y := 1; \cwhile{x > 0}{\ldots})
+\\ \Rightarrow & 
+(\set{x : 5, y : 1}, \cwhile{x > 0}{y := y*x; x := x - 1})
+\\ \Rightarrow & 
+(\set{x : 5, y : 1}, y := y*x; x := x - 1; \cwhile{x > 0}{\ldots})
+\\ \Rightarrow & \ldots \ldots
+\end{array}
+\vspace*{-1em}
+\]
+\item Big-step evaluation
+\[\scriptsize
+\hspace*{-2em}
+\begin{prooftree}
+\begin{prooftree}
+\pmb{update}(\set{x:0, y:0}, x, 5) = \set{x: 5, y : 0}
+\justifies
+(\set{x : 0, y : 0}, x := 5) \Reduceto \set{x : 5, y : 0}
+\end{prooftree}
+\;
+\begin{prooftree}
+\cdots \quad \cdots
+\justifies
+(\set{x : 5, y : 0}, y := 1; \cwhile{\ldots}{\ldots}) \Reduceto \set{x : 0, y : 120}
+\end{prooftree}
+\justifies
+(\set{x : 0, y : 0}, x := 5; y := 1; \cwhile{x > 0}{\ldots}) \Reduceto \set{x : 0; y : 120}
+\end{prooftree}
+\]
+\normalsize
+\end{itemize}
+\end{slide}
+
+\section{Encoding WHILE in PCF}
+
+\begin{slide}{PCF with stores}
+\begin{itemize}
+\item Imperative languages can be encoded in purely functional languages. \\
+\begin{itemize}
+\item A better understanding of the relation between the two styles of languages. \\
+\item This also helps to define denotational semantics for imperative languages.
+\vspace*{-0.5em}
+\end{itemize}
+\item To interpret WHILE, we use an extended version of PCF \emblue{with stores}.
+\[
+\tau ::= \tnat \mid \tbool \mid \emblue{\tstore} \mid \emblue{\tloc} \mid \emred{\tlift{\tstore}}
+\mid \tau \times \tau \mid \tau \to \tau
+\]
+$\tloc$ is the type for locations in a store (L-values of variables). \\[0.3em]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{PCF with stores}
+\begin{itemize}
+\item $\tlift{\tstore}$ is a \emblue{lifted type}, which contains all elements of $\tstore$ 
+plus \emblue{non-termination}.
+\vspace*{-0.3em}
+\[
+\begin{prooftree}
+\Gamma \vdash e : \tstore 
+\justifies
+\Gamma \vdash \clift e : \tlift{\tstore}
+\end{prooftree}
+\qquad
+\begin{prooftree}
+\Gamma \vdash e : \tlift{\tstore}
+\quad \Gamma, x: \tstore \vdash e' : \tlift\tstore  
+\justifies
+\Gamma \vdash \cletst{x}{e}{e'} : \tlift\tstore
+\end{prooftree}
+\vspace*{-1em}
+\]
+\begin{itemize}
+\item The $\mathtt{letstore}$ expression: if $e$ does not terminate, 
+  then the entire expression does not terminate either; 
+  otherwise evaluates $e'$ with $x$ being the value of $e$. \\
+\item $\tlift{\tstore}$ can be defined using sum and unit:  $\tlift{\tstore} \defeq \emblue{\tstore + \tunit}$.
+\vspace*{-1em}
+\end{itemize}
+\item Pre-defined functions \vspace*{-0.5em}
+\begin{itemize}
+\item $\cvalof : \emblue{\tstore \times \tloc \to \tnat}$.\\
+\item $ \cupdate : \emblue{\tstore \times \tloc \times \tnat \to \tstore}$. 
+\vspace*{-1.6em}
+\end{itemize}
+\begin{eqnarray*}
+\cvalof(\cupdate(s, l, v), l) & = & v
+\\
+\cupdate(s, l, \cvalof(s, l)) & = & s
+\\
+\cupdate(\cupdate(s, l, v_1), l, v_2) & = & \cupdate(s, l, v_2)
+\\[-4em]
+\end{eqnarray*}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Interpretation}
+\begin{itemize}
+\item Interpretation of expressions $\Eval{\_}_E$: 
+  PCF functions of \emblue{$\tstore \to \tnat$} (or \emblue{$\tstore \to \tbool$}).
+\begin{eqnarray*}
+\Eval{x} & \defeq & \lambda s : \tstore \ldot \cvalof(s, x) \\[0.3em]
+\Eval{E_1 + E_2} & \defeq & \lambda s : \tstore \ldot \Eval{E_1} (s) + \Eval{E_2} (s) \\[0.3em]
+\Eval{E_1 \eqtest E_2} & \defeq & 
+\lambda s : \tstore \ldot \\
+& & \qquad \cif{\Eval{E_1} (s) \eqtest \Eval{E_2} (s)}{\ctrue}{\cfalse} \\[0.3em]
+\ldots & \ldots & 
+\end{eqnarray*}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Interpretation}
+\begin{itemize}
+\item Interpretation of programs $\Eval{\_}_P$: PCF functions of \emred{$\tstore \to \tlift\tstore$}.
+\begin{itemize}
+\item Assignment:
+\vspace*{-0.5em}
+\[
+\Eval{x := E} \defeq \lambda s : \tstore \ldot \clift{\cupdate(s, x, \Eval{E} (s))}
+\vspace*{-1.5em}
+\]
+\item Conditional: 
+\vspace*{-0.5em}
+\[
+\begin{array}{l}
+\Eval{\cif{E}{P_1}{P_2}} \defeq \\[0.2em]
+\qquad\qquad \lambda s : \tstore \ldot \cif{\Eval{E}(s)}{\Eval{P_1} (s)}{\Eval{P_2} (s)}
+\end{array}
+\vspace*{-1em}
+\]
+\item Sequential: 
+\vspace*{-0.5em}
+\[
+\Eval{P_1 ; P_2} \defeq \lambda s : \tstore \ldot 
+\cletst{s_1}{\Eval{P_1} (s)}{\Eval{P_2} (s_1)}
+\vspace*{-1.5em}
+\]
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Interpretation of while-loop}
+\begin{itemize}
+\item The interpretation of while-loop is recursively defined.
+\[
+\begin{array}{l}
+\Eval{\cwhile E P} =  
+\\[0.2em] \qquad \qquad 
+\lambda s : \tstore \ldot \ttif \; \Eval{E}(s) 
+\\[0.2em] \hspace*{8.7em}
+\ttthen \; \cletst{s'}{\Eval{P} (s)}{\Eval{\cwhile E P} (s')}
+\\[0.2em] \hspace*{8.7em}
+\ttelse \; \clift s 
+\end{array}
+\]
+The definition with PCF fix-point operator:
+\[
+\begin{array}{l}
+\Eval{\cwhile E P} =  
+\\[0.2em] \qquad \, 
+\cfix \, \lambda f : (\tstore \to \tlift\tstore) \ldot \lambda s : \tstore \ldot 
+\\[0.2em] \qquad \qquad
+\ttif \; {\Eval{E}(s)} \; 
+\ttthen \; \cletst{s'}{\Eval{P} (s)}{f (s')} \; \ttelse \; \clift{s}
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Example}
+We can use PCF-store to reason about WHILE programs.
+\begin{itemize}
+\item Define $\pmb{skip} \defeq x := x$.
+\vspace*{-0.7em}
+\begin{eqnarray*}
+\Eval{\pmb{skip}} & = & 
+\lambda s : \tstore  \ldot \clift{\cupdate(s, x, \Eval x (s))} 
+\\ & = & 
+\lambda s : \tstore \ldot \clift{\cupdate(s, x, \cvalof(s, x))}
+\\ & = & 
+\lambda s : \tstore \ldot \clift{s}
+\end{eqnarray*}
+\vspace*{-2em}
+\item Prove that $\Eval{\cwhile E P} = \Eval{\cif{E}{P; \cwhile E P}{\pmb{skip}}}$.
+\vspace*{-0.7em}
+\[
+\begin{array}{ll}
+& \Eval{\cwhile E P} 
+\\[0.2em] = &
+\cfix \, \lambda f \ldot \lambda s \ldot 
+\cif{\Eval E (s)}{\cletst{s'}{\Eval P (s)}{f (s')}}{\clift s}
+\\[0.2em] = & 
+\lambda s \ldot \ttif \; \Eval E (s) \; \ttthen \; \cletst{s'}{\Eval P (s)}{\Eval{\cwhile E P}(s')}
+\\ & \hspace*{1.8em}
+\ttelse \; \clift s
+\\[0.2em] = & 
+\lambda s \ldot \cif{\Eval E (s)}{\Eval{P; \cwhile E P}(s)}{\Eval{\pmb{skip}(s)}}
+\\[0.2em] = &
+\Eval{\cif{E}{P; \cwhile E P}{\pmb{skip}}}
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Equivalence between op. and de. semantics}
+\begin{itemize}
+\item For every WHILE-expression $E$, \emblue{$(S, E) \reduce v$ iff $\Eval E (S) = v$}.
+\\[0.2em]
+{\em Proof.} Done by induction on the expression structure.
+\\[0.3em]
+\item For every WHILE-program  $P$, \emblue{$(S, P) \Reduceto S'$ 
+  iff $\Eval P (S) = \clift{S'}$ and $\Eval P (S) \neq \bot$}.
+\\[0.2em]
+{\em Proof.} This is also a proof by induction on program structure. But for the WHILE-loop, 
+we need an extra induction on the unfolding length (for every terminating loop):
+\[
+\begin{array}{l}
+\pmb{length} (S, \cwhile E P) \defeq n \mbox{ such that} 
+\\[0.2em] \qquad \qquad 
+S = S_0 
+\\[0.2em] \qquad 
+\mbox{and } (S_i, E) \reduce \ctrue ,  (S_{i}, P) \Reduceto S_{i + 1} 
+\mbox{ for all } 0 \leq i < n 
+\\[0.2em] \qquad 
+\mbox{and } (S_n, E) \reduce \cfalse 
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\end{document}
+ 
+

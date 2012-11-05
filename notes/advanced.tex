@@ -1,0 +1,622 @@
+\documentclass[paper=screen,mode=present,style=zysimple]{powerdot}
+
+\usepackage{fancyvrb,verbatim,listings}
+\usepackage{proof}
+\usepackage[all]{xypic,xy}
+
+\input{macros}
+
+\pdsetup{lf={Theory and Practice of Functional Programming}}
+
+\title{{\small \textsc{Theory and Practice of Functional Programming}}
+\\[12pt]
+{\Large \color{TitleColor} Topics in Type Theory}
+}
+\author{\small \textbf{Dr. ZHANG Yu}
+  \\[2pt] \small Institute of Software, Chinese Academy of Sciences 
+  \\[5pt] \includegraphics[height=.04\slideheight]{iscas.eps} 
+  \qquad \qquad 
+  \includegraphics[height=.04\slideheight]{cas.eps}
+}
+\date{\scriptsize Fall term, 2012 \qquad GUCAS, Beijing}
+
+\newcommand{\RED}{\mathsf{RED}}
+
+\begin{document}
+
+\maketitle 
+
+\section{Polymorphism and System F}
+
+\begin{slide}{Polymorphism and types}
+\begin{itemize}
+\item Programs with generic behaviours that are independent of types:
+\begin{eqnarray*}
+&& {id}_{\tau} \defeq \lambda x : \tau \ldot x
+\\ && 
+{compose}_{\tau_1, \tau_2, \tau_3} \defeq 
+\lambda f : \tau_2 \to \tau_3 \ldot \lambda g : \tau_1 \to \tau_2 \ldot \lambda x : \tau_1 \ldot f (g (x))
+\\ & & 
+\ldots \quad \ldots
+\\[-3em]
+\end{eqnarray*}
+\item These expressions can be considered as polymorphic, and can be given a unifying type in a polymorphic type system.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{System F}
+\begin{itemize}
+\item System F \emgreen{[Jean-Yves Girard]}.
+\begin{itemize}
+\item Extension of simply-typed $\lambda$-calculus with polymorphic types.
+\item A.k.a. {\em polymorphic $\lambda$-calculus}, independently by \emgreen{John Reynolds}.
+\end{itemize}
+\item Types
+\[
+\begin{array}{lrl@{\quad}l}
+\tau, \tau', \ldots & ::= & X \mid \tau \to \tau' & 
+\\ 
+& \mid & \emred{\forall X \ldot \tau} & \mbox{polymorphic type}
+\end{array}
+\]
+\item Terms (expressions)
+\[
+\begin{array}{lrl@{\quad}l}
+e, e' & ::= & x \mid \lambda x : \tau \ldot e \mid e \, e' 
+\\
+& \mid & \emred{\Lambda X \ldot e} & \mbox{universal abstraction}
+\\
+& \mid & \emred{e [\tau]} & \mbox{universal application}
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{System F}
+\begin{itemize}
+\item Universal reduction 
+\[
+\emblue{(\Lambda X \ldot e) \tau \reduce e [\tau / X]}
+\vspace*{-2em}
+\]
+\item Typing
+\begin{itemize}
+\item Type information judgement (well-formed type)
+\[
+\prooftree
+\Delta , X : \Type \vdash \tau : \Type
+\justifies
+\Delta \vdash \forall X \ldot \tau : \Type
+\endprooftree
+\]
+\item Typing judgement
+\[
+\begin{array}{c}
+\prooftree
+\Delta, X : \Type ; \Gamma \vdash e : \tau
+\justifies
+\Delta ; \Gamma \vdash \Lambda X \ldot e : \forall X \ldot \tau
+\endprooftree
+\qquad
+\prooftree
+\Delta ; \Gamma \vdash e : \forall X \ldot \tau : \Type
+\quad 
+\Delta \vdash \tau' : \Type
+\justifies
+\Delta ; \Gamma \vdash e [\tau'] : \tau[\tau' / X]
+\endprooftree
+\end{array}
+\]
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Representing simple types}
+\begin{itemize}
+\item Unit type 
+\[
+\emblue{\tunit \defeq \forall X \ldot X \to X}
+\]
+This type contains one and \emred{only one} element --- the identity function:
+\[
+* \defeq \Lambda X \ldot \lambda x : X \ldot x
+\]
+This is supported by the \emblue{parametricity theorem}, which says that every program of type 
+$\forall X \ldot X \to X$ is {\em observationally equivalent} to the above identity function.
+\item Empty type
+\[
+\emblue{\bot \defeq \forall X \ldot X}
+\]
+There is no well-typed program of this type. 
+\\
+Polymorphism says that a program of the type returns a value, independently of the choice of type $X$, 
+including types with no programs.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Representing simple types}
+\begin{itemize}
+\item Boolean 
+\[
+\emblue{\tbool \defeq \forall X \ldot X \to X \to X}
+\]
+The only two elements of $\tbool$ 
+\[
+\ctrue \defeq \Lambda X \ldot \lambda x : X \ldot \lambda y : X \ldot x , 
+\qquad
+\cfalse \defeq \Lambda X \ldot \lambda x : X \ldot \lambda y : X \ldot y 
+\]
+\item Products
+\[
+\emblue{\tau_1 \times \tau_2 \defeq \forall X \ldot (\tau_1 \to \tau_2 \to X) \to X}
+\]
+Pairing and projections
+\[
+\begin{array}{l}
+\cpair{e_1, e_2} \defeq \Lambda X \ldot \lambda f : \tau_1 \to \tau_2 \to X \ldot f \, e_1 \, e_2
+\\
+\cproj_1 \, e \defeq e [\tau_1] \lambda x : \tau_1 \ldot \lambda y : \tau_2 \ldot x
+\\
+\cproj_2 \, e \defeq e [\tau_2] \lambda x : \tau_1 \ldot \lambda y : \tau_2 \ldot y
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Representing inductive types}
+\begin{itemize}
+\item Natural numbers
+\[
+\emblue{\tnat \defeq \forall X \ldot X \to (X \to X) \to X}
+\]
+The constants zero and successor
+\[
+\begin{array}{l}
+\czero \defeq \Lambda X \ldot \lambda x : X \ldot \lambda f : X \to X \ldot X , 
+\\[0.5em]
+\csucc \, n \defeq \Lambda X \ldot \lambda x : X \ldot \lambda f : X \to X \ldot f (n \, X \, x \, f), 
+\end{array}
+\]
+The primitive recursor $\pmb{R}$, of type $\tau \to (\tau \to \tnat \to \tau) \to \tnat \to \tau$ 
+can be defined by the iterator $\pmb{It}$ (of type $\tau \to (\tau \to \tau) \to \tnat \to \tau$)
+\[
+\pmb{It} \ g \ f \ n \defeq n [\tau] g f 
+\qquad
+\pmb{R} \ g \ f \ n \defeq \cproj_1 (\pmb{It} \, \cpair{g, \czero} \, G \, n) ,
+\]
+where $G = \lambda x : \tau \times \tnat \ldot \cpair{f (\cproj_1\, x) (\cproj_2 \, x), \csucc (\cproj_2 \, x)}$.
+It can be checked that 
+\[
+\pmb{R} \ g \ f \ \czero \reduceto g , 
+\qquad
+\pmb{R} \ g \ f \ (\csucc \ n) \reduceto f \ (\pmb{R} \ g \  f  \ n) \ n, 
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Representing inductive types}
+\begin{itemize}
+\item List of natural numbers
+\[
+\emblue{\tlist \defeq \forall X \ldot X \to (\tnat \to X \to X) \to X}
+\]
+The empty list and constructor
+\begin{eqnarray*}
+\cnil & \defeq & \Lambda X \ldot \lambda x : X \ldot \lambda f : \tnat \to X \to X \ldot x
+\\
+\mathtt{cons} \, n \, l & \defeq & \Lambda X \ldot 
+\lambda x : X \ldot \lambda f : \tnat \to X \to X \ldot f \, n \, (l \, [X] \, x \, f)
+\end{eqnarray*}
+A list $[n_1, n_2, \ldots , n_k]$ is basically represented by 
+\[
+\Lambda X \ldot \lambda x \ldot \lambda f \ldot f \, n_1 ( f \, n_2  \cdots (f \, n_k \, x) \cdots )
+\]
+Adding a further abstraction we can get a more general version of list (not only of natural numbers) :
+\[
+\emblue{\forall Y} \ldot \forall X \ldot X \to (\emblue{Y} \to X \to X) \to X 
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Properties about  system F}
+\begin{itemize}
+\item System F is strongly normalizing.
+\item Not all total recursive functions are representable in system F.
+\begin{itemize}
+\item The reduction function of system F cannot be programmed in system F.
+\end{itemize}
+\item According to CH correspondence, system F corresponds to a fragment of \emblue{second-order logic} 
+  without the existential quantifier.
+\item Type inference in system F is undecidable.
+\item In practice, we often use a restricted version of polymorphism where the universal binder only 
+  appears at the out-most level of types.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Existential types}
+\begin{itemize}
+\item Existential types supply a mechanism for data abstraction.
+\item Existential types
+\[
+\tau, \tau', \ldots  ::= \ldots \mid \emred{\exists X \ldot \tau}
+\]
+$\exists X \ldot \tau$ can be seen as an interface of some abstract data type $\tau$, 
+whose implementation will be supported by type $X$.
+\item Expressions 
+\vspace*{-1em}
+\[
+\begin{array}{lrll}
+e, e', \ldots & ::= & \ldots & 
+\\
+& \mid & \mathtt{pack} \; \sigma \; \mathtt{with} \; e & \mbox{Implementation}
+\\
+& \mid & \mathtt{open} \; e \; \mathtt{as} \; x \; \mathtt{in} \; e' & 
+\mbox{Using abstract type through interface}
+\\[-2em]
+\end{array}
+\]
+\item Typing 
+\small
+\[
+\begin{array}{c}
+\prooftree
+\Delta \vdash \sigma : \Type 
+\quad 
+\Delta, X : \Type \vdash \tau : \Type
+\quad 
+\Delta ; \Gamma \vdash e : \tau [\sigma / X]
+\justifies
+\Delta ; \Gamma \vdash \mathtt{pack} \; \sigma \; \mathtt{with} \; e : \exists X \ldot \tau 
+\endprooftree
+\\[1.5em]
+\prooftree
+\Delta ; \Gamma \vdash e : \exists X \ldot \tau 
+\quad 
+\Delta \vdash \tau' : \Type
+\quad 
+\Delta, X : \Type ; \Gamma, x: \tau \vdash e' : \tau'
+\justifies
+\Delta; \Gamma \vdash \mathtt{open} \; e \; \mathtt{as} \; x \; \mathtt{in} \; e' : \tau'
+\endprooftree
+\end{array}
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Existential types and data abstraction}
+\begin{itemize}
+\item Example: an abstract type of stack of natural numbers, consisting of 
+\begin{itemize}
+\item Formation of the empty stack.
+\item Pushing an element at the top of the queue.
+\item Popping the top element out.
+\end{itemize}
+The abstract stack type can be encoded as
+\[
+\mathsf{Stack} \defeq \exists X \ldot X \times (\tnat \times X \to X) \times (X \to \tnat \times X)
+\]
+The product defines types of the three operations. \\
+An implementation with $\tlist$:
+\[
+\mathtt{pack} \; \tlist \; \mathtt{with} \;
+\cpair{\cnil, \lambda x : \tnat \ldot \lambda y : \tlist  \ldot x :: y, 
+\lambda x : \tlist \ldot \cdots }
+\vspace*{-2em}
+\]
+\item Reduction: 
+\[
+\mathtt{open} \; (\mathtt{pack} \; \sigma \; \mathtt{with} \; e) \; \mathtt{as} \; x \; 
+\mathtt{in} \; e' \reduce 
+e'[\sigma / X] [e / x]
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Representing existential types in system F}
+\begin{itemize}
+\item Existential types do not increase the computational capability of system F: 
+they can be encoded in system F.
+\begin{itemize}
+\item Encoding of types: the $\mathtt{open}$ expression implicitly defines a way of mapping 
+  any implementation to whatever types
+\[
+\exists X \ldot \tau \defeq \forall Y \ldot (\forall X \ldot \tau \to Y) \to Y 
+\vspace*{-1.5em}
+\]
+\item Encoding of expressions:
+\begin{eqnarray*}
+\mathtt{pack} \; \sigma \; \mathtt{with} \; e & \defeq & 
+\Lambda Y \ldot \lambda f : (\forall X \ldot \tau \to Y) \ldot f [\sigma] e 
+\\
+\mathtt{open} \; e \; \mathtt{as} \; x \; \mathtt{in} \; e' & \defeq & 
+e [\tau'] (\lambda x : \tau \ldot e')
+\end{eqnarray*}
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\section{Infinite Data Types}
+
+\begin{slide}{Infinite types}
+\begin{itemize}
+\item Products and sums are finite types.
+\begin{itemize}
+\item How do we build infinite types (e.g., $\tnat$) with finite constructors?
+\end{itemize}
+\item Inductive and co-inductive types are two important forms of infinite types.
+\begin{itemize}
+\item An {\em inductive type} defines a \emred{least} set of elements that can be produced from 
+  a finite set of constructors.
+\item A {\em co-inductive type} defines a \emred{largest} set of elements that can be consumed 
+  by a finite set of destructors.
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Inductive types}
+\begin{itemize}
+\item Example: Nat 
+\vspace*{-0.5em}
+\begin{itemize}
+\item Infinitely many element.
+\item Every element can be represented by two constructors: $\czero$ and $\csucc$. 
+\item The least set containing $\czero$ and closed under $\csucc$. 
+\end{itemize}
+\item Representing $\tnat$ as an inductive type (by sum)
+\[
+\prooftree
+\Gamma \vdash e : \tunit + \tnat
+\justifies
+\Gamma \vdash \cfold e : \tnat
+\endprooftree
+\qquad 
+\prooftree
+\Gamma \vdash e_1 : \tnat
+\quad  
+\Gamma, x : \tunit + \tau \vdash e_2 : \tau
+\justifies
+\Gamma \vdash \mathtt{rec} \; e_1 \; \mathtt{for} \; x \; \mathtt{in} \; e_2 : \tau
+\endprooftree
+\]
+with a reduction rule 
+\[
+\begin{array}{l}
+\mathtt{rec} \; (\emblue{\cfold e_1}) \; \mathtt{for} \; x \; \mathtt{in} \; e_2 
+\reduce 
+\\ \quad
+e_2 [ \mathtt{case}\; e_1 \; \mathtt{of} \; \cinj_1 (\_) \; \mathtt{in} \; \cinj_1 (*) ; 
+\\ \hspace*{7em}
+\cinj_2 (y) \; \mathtt{in} \;  \cinj_2(\emblue{\mathtt{rec}\; y \;\mathtt{for}\; x \;\mathtt{in}\;  e_2}) / x]
+\end{array}
+\]
+Define $\czero$ and $\csucc$:
+$\czero \defeq  \cfold (\cinj_1 *),
+\;
+\csucc \defeq \lambda x : \tnat \ldot \cfold (\cinj_2 x)$.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Co-inductive types}
+\begin{itemize}
+\item Example: $\tstream$
+\vspace*{-0.5em}
+\begin{itemize}
+\item A stream is an infinite sequence of objects (integers).
+\item A stream is characterized by two destructors: 
+	$\chd$ returns the head element of the stream and 
+	$\ctl$ returns the tail of the stream.
+\[
+\prooftree
+\Gamma \vdash e : \tstream
+\justifies
+\Gamma \vdash \chd (e) : \tnat
+\endprooftree
+\qquad \qquad
+\prooftree
+\Gamma \vdash e : \tstream
+\justifies
+\Gamma \vdash \ctl (e) : \tstream
+\endprooftree
+\vspace*{-1em}
+\]
+\end{itemize}
+\item Representing $\tstream$ as a co-inductive type (by product)
+\vspace*{-0.5em}
+\[
+\prooftree
+\Gamma \vdash e : \tstream
+\justifies
+\Gamma \vdash \cunfold  e : \tnat \times \tstream
+\endprooftree
+\qquad
+\prooftree
+\Gamma \vdash e_1 : \tau
+\quad
+\Gamma, x : \tau \vdash e_2 : \tnat \times \tau
+\justifies
+\Gamma \vdash \mathtt{gen} \; e_1 \; \mathtt{as} \; x \; \mathtt{in} \; e_2 : \tstream
+\endprooftree
+\]
+with a reduction rule
+\vspace*{-0.8em}
+\[
+\begin{array}{l}
+\cunfold (\mathtt{gen} \; e_1 \; \mathtt{as} \; x \; \mathtt{in} \; e_2) 
+\reduce 
+\\ \qquad
+\cpair{\cproj_1 (e_2[e_1 / x]), \mathtt{gen} \; \emblue{\cproj_2 (e_2[e_1 /x ])} \; 
+  \mathtt{as} \; x \; \mathtt{in} \; e_2}
+\\[-0.5em]
+\end{array}
+\]
+Define $\chd$ and $\ctl$: 
+$\chd \defeq \lambda x : \tstream \ldot \cproj_1 (\cunfold x), \;
+\ctl \defeq \lambda x : \tstream \ldot \cproj_2 (\cunfold x)$.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Recursive types}
+\begin{itemize}
+\item Inductive and co-inductive types can be both seen as \emblue{fix-points} of type operators up to isomorphism.
+\begin{itemize}
+\item Two types are isomorphic if they are mutually inverse to each other.
+\\
+We write \emblue{$\mu X \ldot \tau$} for the solution to the equation $X \simeq \tau$.
+\item $\tnat$ and $\tunit + \tnat$ are isomorphic and 
+	\empurple{$\mu X \ldot \tunit + X$ is a solution to the equation $\tnat \simeq \tunit + \tnat$}.
+\item $\tstream$ and $\tnat \times \tstream$ are isomorphic and 
+	\empurple{$\mu X \ldot \tnat \times X$ is a solution to the equation $\tstream \simeq \tnat \times \tstream$}.
+\item Not every type isomorphism equation has a solution, 
+  e.g., $X \simeq X \to \tbool$ (has no solution by Cantor's theorem).
+\end{itemize}  
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Recursive type system}
+\begin{itemize}
+\item Types ($\lambda^{\to, \mu}$):
+\vspace*{-0.5em}
+\[
+\tau, \tau', \ldots ::= X \mid \emblue{\mu X \ldot \tau} \mid \ldots
+\]
+$\mu$ is a type binder for recursive types. 
+\begin{itemize}
+\item Type information judgment $\Delta \vdash \tau : \Type$ 
+($\Delta$ is a set of type variables):
+\[
+\begin{array}{c}
+\prooftree
+\justifies
+\Delta, X: \Type \vdash X : \Type
+\endprooftree
+\qquad 
+\prooftree
+\Delta \vdash \tau_1 : \Type
+\quad 
+\Delta \vdash \tau_2 : \Type
+\justifies
+\Delta \vdash \tau_1 \to \tau_2 : \Type
+\endprooftree
+\\[1em]
+\ldots \quad \ldots
+\\[1em]
+\emblue{
+\prooftree
+\Delta, X : \Type  \vdash \tau : \Type
+\justifies
+\Delta \vdash \mu X \ldot \tau : \Type
+\endprooftree
+}
+\\[-1em]
+\end{array}
+\]
+\item Typing judgement is of the form $\Delta ; \Gamma \vdash e : \tau$, 
+  which indicates \emblue{both $\Delta \vdash \tau : \Type$ and $\Gamma \vdash e : \tau$}
+  ($\Gamma$ is the normal typing environment mapping variables to types).
+\end{itemize}
+\end{itemize}
+\end{slide}
+
+\begin{slide}[toc=]{Recursive type system}
+\begin{itemize}
+\item Expressions
+\vspace*{-0.5em}
+\[
+e ::= \cfold e \mid \cunfold e \mid \ldots
+\]
+with typing rules:
+\[
+\prooftree
+\Gamma \vdash e : \tau[\mu X . \tau / X]
+\justifies 
+\Gamma \vdash \cfold e : \tau   
+\endprooftree
+\qquad 
+\prooftree
+\Gamma \vdash e : \mu X . \tau
+\justifies 
+\Gamma \vdash \cunfold e : \tau[\mu X . \tau / X]   
+\endprooftree
+\]
+and reduction rules
+\[
+\begin{array}{c}
+\prooftree
+e \reduce e'
+\justifies 
+\cfold e \reduce \cfold e'
+\endprooftree
+\qquad 
+\prooftree
+e \reduce e'
+\justifies 
+\cunfold e \reduce \cunfold e'
+\endprooftree
+\qquad
+\prooftree
+\cfold e \not\reduce 
+\justifies 
+\cunfold (\cfold e) \reduce e
+\endprooftree
+\end{array}
+\]
+The first rule indicates an eager evaluation semantics.
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Recursive data structure}
+\begin{itemize}
+\item Natural numbers: $\tnat \defeq \mu X \ldot \tunit + X$.
+\[
+\czero \defeq \cfold (\cinj_1 *) ,
+\quad 
+\csucc \defeq \lambda x : \tnat \ldot \cfold (\cinj_2 x)
+\]
+The conditional $\mathsf{D}$ can be defined using $\mathtt{case}$.
+\item List (of natural numbers): $\tlist \defeq \mu X \ldot \tunit + (\tnat \times X)$.
+\[
+\cnil \defeq \cfold (\cinj_1 *) ,
+\quad 
+\mathtt{cons} \defeq \lambda x : \tnat \ldot \lambda y : \tlist \ldot \cfold (\cinj_2 \cpair{x, y})
+\]
+\end{itemize}
+\end{slide}
+
+\begin{slide}{Recursion with recursive types}
+\begin{itemize}
+\item Without further restriction, the system is not strongly normalizing:
+\\
+Define $\omega = \mu X \ldot X \to X$, then  
+\begin{eqnarray*}
+& & 
+(\lambda x: \omega \ldot (\cunfold x \, x)) (\cfold \lambda x : \omega \ldot (\cunfold x \, x))
+\\ & \reduce & 
+\cunfold (\cfold \lambda x : \omega \ldot (\cunfold x \, x)) (\cfold \lambda x : \omega \ldot (\cunfold x \, x))
+\\ & \reduce & 
+(\lambda x : \omega \ldot (\cunfold x \, x)) (\cfold \lambda x : \omega \ldot (\cunfold x \, x))
+\\[-2em]
+\end{eqnarray*}
+Typed $\lambda$-calculus with only \empurple{positive recursive types} is strongly normalizing.
+\item Define fixpoint operator (as in PCF) with recursive types: \\
+For every type $\tau$, define $\tself(\tau) = \mu X \ldot X \to \tau$.
+\vspace*{-1.5em}
+\end{itemize}
+\small
+\begin{eqnarray*}
+\cfix_\tau e & \defeq & 
+\cunfold (\cfold \lambda x: \tself(\tau) \ldot e (\cunfold x \, x)) 
+(\cfold \lambda x: \tself(\tau) \ldot e (\cunfold x \, x)) \\
+& \reduce & 
+(\lambda x: \tself(\tau) \ldot e (\cunfold x \, x)) 
+(\cfold \lambda x: \tself(\tau) \ldot e (\cunfold x \, x)) \\
+& \reduce & 
+e (\cunfold (\cfold \lambda x: \tself(\tau) \ldot e (\cunfold x \, x)) 
+(\cfold \lambda x: \tself(\tau) \ldot e (\cunfold x \, x))) \\
+& = & 
+e ( \cfix_\tau e)
+\end{eqnarray*}
+\end{slide}
+
+\end{document}
+ 
+
