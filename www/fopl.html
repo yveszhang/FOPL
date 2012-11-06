@@ -1,0 +1,331 @@
+<HTML>
+<HEAD>
+<LINK REL="SHORTCUT ICON" HREF="../icons/zhang.ico">
+<TITLE>Theory and Practice of Functional Programming</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=utf-8">
+<link rel="stylesheet" type="text/css" href="/~yzhang/CSS/style_lsv.css">
+</HEAD>
+
+<BODY>
+<FONT face="Times New Roman,Times"><BR>
+
+<TABLE cellPadding=0 width="600" cellspacing=6>
+<TBODY>
+<TR><TD>
+<B><FONT color=darkblue size=+2>Theory and Practice of Functional Programming</FONT></B><BR>
+<p>
+Lecture place: <b>Room <font color="red">N408</font></b> of the GUCAS building, Zhongguancun.
+<br>
+Lecture time: <b>Friday morning 8:00 -- 11:40</b>
+</P>
+
+<p>
+Lecturer: Dr. <a href="http://lcs.ios.ac.cn/~yzhang/">ZHANG Yu</a>
+<br>
+<img alt="yzhang AT ios DOT ac DOT cn" src="/~yzhang/images/email_iscas.gif" border=0>
+<br>
+Office: ISCAS Building #5, Room 315
+&nbsp;&nbsp;&nbsp;&nbsp;
+Phone: (010) 6266 1656
+<br>
+Office hour: Tuesday afternoon 15:00 -- 18:00
+</TD></TR>
+</TBODY></TABLE>
+
+<!-- <br> -->
+<!-- <font color="red"><b>New:</b></font><br> -->
+<!-- <li>The slides and exercises of the Coq sessions are online! -->
+<!-- <br> -->
+<!-- <li>The lecture of Nov. 19 (Friday) starts noramlly at 8am! -->
+<p>
+
+<TABLE cellPadding="0" width="700" cellspacing="0">
+<TBODY>
+<TR><TD align="left">
+The course consists of two major parts:
+<blockquote>
+<dl>
+
+<dt>
+<p>
+<b>Theory</b>: fundamental theories of PL: lambda-calculus and PCF, 
+formal semantics, program analysis, type systems and theory.
+</p>
+</dt>
+
+<dt>
+<p>
+<b>Functional programming</b>: Haskell will be our language.
+This part includes important concepts of functional programming, FP data structures and algorithms,
+functional pearls, etc.
+</p>
+</dt>
+
+</dl>
+</blockquote>
+
+<p>
+After the course, students will be expected to have a good understanding of the elementary 
+theory of programming languages and be able to use related techniques to do basic program analysis.
+On the practical side, they should have a deep understanding of concepts of functional programming, 
+and be able to use a functional language to develop applications of reasonable size.
+</p>
+
+<H3>Reference</H3>
+We do not have a textbook for the course. Here are some references. 
+Lecture notes and related material will be available on this page while the course goes on.
+
+<blockquote>
+<H4>Theory</H4>
+
+<p>
+[T1] Peter Selinger.
+<a href="http://www.cs.bham.ac.uk/~axj/pub/papers/lambda-calculus.pdf">A short introduction to 
+the Lambda Calculus</a>.
+</p>
+
+<p>
+[T2] <a href="http://theory.stanford.edu/people/jcm/">John C. Mitchell</a>. 
+<a href="http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&tid=3460"><i>Foundations for Programming Languages</i></a>. 
+The MIT press, 1996.
+</p>
+
+<p>
+[T3] Jean-Yves Girard, Y. Lafont, P. Taylor.
+<a href="http://www.paultaylor.eu/stable/Proofs+Types.html">Proofs and Types</a>.
+Cambridge University Press, 1989.
+</p>
+
+<p>
+[T4] <a href="http://www.cs.cmu.edu/~rwh/">Robert Harper</a>.
+<a href="http://www.cs.cmu.edu/~rwh/plbook/book.pdf"><i>Practical Foundations for Programming Languages</i></a>.
+Working draft, 2010.
+</p>
+
+<p>
+[T5] <a href="http://www.cis.upenn.edu/~bcpierce/">Benjamin C. Pierce</a>.
+<a href="http://www.cis.upenn.edu/~bcpierce/tapl/index.html"><i>Types and Programming Languages</i></a>.
+The MIT press, 2002.
+</p>
+
+<p>
+[T6] <a href="http://www.cis.upenn.edu/~bcpierce/">Benjamin C. Pierce</a>.
+<i>Basic Category Theory for Computer Scientists</i>.
+The MIT press, 1991.
+</p>
+
+<H4>Functional programming</H4>
+
+<p>
+[FP1]Miran Lipovača.
+<a href="http://learnyouahaskell.com/"><i>Learn You a Haskell for Great Good</i></a>. 2011.
+</p>
+
+<p>
+[FP2]Chris Okasaki. 
+<a href="http://www.cs.cmu.edu/~rwh/theses/okasaki.pdf">Purely Functional Data Structure</a>.
+</p>
+
+<p>
+[FP3]Richard Bird.
+<a href="http://www.cambridge.org/gb/knowledge/isbn/item5600469/?site_locale=en_GB">Pearls of Functional Algorithm Design</a>.
+Cambridge University Design, 2010.
+</p>
+
+<p>
+[FP4]Bryan O'Sullivan, Don Stewart, and John Goerzen.
+<a href="http://book.realworldhaskell.org/"><i>Real World Haskell</i></a>. O'Reilly, 2008.
+</p>
+
+<p>
+[FP5]<a href="http://cristal.inria.fr/~remy/">Didier Rémy</a>.
+<a href="http://gallium.inria.fr/~remy/cours/appsem/"><i>Using, Understanding, and Unraveling The OCaml Language</i></a>.
+</p>
+</blockquote>
+
+<H3>Course schedule</H3>
+ 
+
+<table cellpadding="2" width="700" cellspacing="0" border="1">
+<tbody>
+
+<tr align="center">
+<td width="80">Date
+</td>
+
+<td>Content
+</td>
+
+<td width="125">Lecture notes
+</td>
+</tr>
+
+<tr>
+<td>Sept. 14
+</td>
+
+<td>
+Lambda-calculus: syntax, reduction, normalization, confluency, expresiveness, ...
+<br>
+<b>Ref:</b> [T1] (chapter 1-4)
+</td>
+
+<td>
+<a href="01_lambda.pdf">Slides</a>
+</td>
+</tr>
+
+<tr>
+<td>Sept. 21
+</td>
+
+<td>
+Typed lambda calculi and PCF
+<br>
+<b>Ref:</b> 
+<br>[T1] (chapter 11), [T2] (chapter 2), [T3] (chapter 4, 6, 7)
+</td>
+
+<td>
+Slides:
+<br><a href="02_typed_lambda.pdf">I: Types</a>
+<br><a href="02_pcf.pdf">II: PCF</a>
+<!-- <br><a href="02_while.pdf">III: WHILE</a> -->
+</td>
+</tr>
+
+<tr>
+<td>Sept. 28<br>Sept. 29
+</td>
+
+<td>FPL: introduction to Haskell (evaluation, recursion schemes, data types, pattern matching, type classes, ...)
+<br>
+<b>Ref:</b>  [FP1] (chapter 1-8) 
+</td>
+
+<td>
+<a href="samplecode.tgz">Sample code</a>
+</td>
+</tr>
+
+<tr>
+<td>Oct. 12
+</td>
+
+<td>Type inference
+<br>
+<b>Ref: </b>
+[T1] (Chapter 9), [T2] (chapter 11) 
+</td>
+
+<td>
+<a href="03_typeinfer.pdf">Slides</a>
+</td>
+</tr>
+
+<tr>
+<td>Oct. 19
+</td>
+
+<td>PCF: operational and denotational semantics
+<br>
+<b>Ref: </b>
+[T1] (Chapter 10, 11, 12), [T2] (Chapter 2, 4, 5)
+</td>
+
+<td>
+<a href="02_pcf.pdf">Slides</a>
+</td>
+</tr>
+
+<tr>
+<td>Oct. 26
+</td>
+
+<td>Imperative languages and monad
+<br>
+<b>Ref: </b>
+[T2] (Chapter 6)
+<br>
+N. Benton, J. Hughes, E. Moggi. <a href="http://research.microsoft.com/apps/pubs/default.aspx?id=67340"><i>Monads and effects</i></a>.
+<br>
+E. Moggi. <a href="http://www.lfcs.inf.ed.ac.uk/reports/90/ECS-LFCS-90-113/"><i>An abstract view of programming languages</i></a>. 
+<br>
+E. Moggi. <a href="http://www.disi.unige.it/person/MoggiE/ftp/ic91.pdf"><i>Notions of computations and monads</i></a>.
+</td>
+
+<td>
+<a href="04_while.pdf">Slides</a>
+</td>
+</tr>
+
+<tr>
+<td>Nov. 2
+</td>
+
+<td>Advanced type systems (System F, recursive types)
+<br>
+<b>Ref:</b>  
+<br>[T3] (chapter 11), [T4] (part VIII, part VI)
+</td>
+
+<td>
+<a href="05_advanced.pdf">slides</a>
+</td>
+</tr>
+
+<tr>
+<td>Nov. 9
+</td>
+
+<td>FPL: advanced haskell programming (monad, concurrent programming, functional data structure, ...)
+<br>
+<b>Ref:</b> 
+<br>
+E. Söylemez. <a href="http://ertes.de/articles/monads.html">Understanding Haskell Monads</a>.
+<br>
+S. Marlow. <a href="http://community.haskell.org/~simonmar/par-tutorial.pdf">Parallel and concurrent programming in Haskell</a>.
+</td>
+
+<td>
+<a href="">Slides</a>
+</td>
+</tr>
+
+<tr>
+<td>Nov. 23<br>Nov. 27
+</td>
+
+<td>Introduction to Coq (by Jean-Francois Monin)
+<br>
+<b>Ref:</b> 
+<br>
+<!-- [T6] Chapter 1 and 2 for category theory -->
+</td>
+
+<td>
+<!-- <a href="04_monad.pdf">Slides</a> -->
+</td>
+</tr>
+
+</tbody>
+</table>
+
+
+</td></tr>
+</TBODY></TABLE>
+
+<br>
+
+<hr width="700" align="left">
+<TABLE cellPadding="0" width="700" cellspacing="0">
+<TBODY>
+<TR><TD align="center">
+<font size=-1>
+Copyright &copy; <i><a href="http://lcs.ios.ac.cn/~yzhang/">ZHANG Yu</a></i>.
+Laboratory of Computer Science, ISCAS, Beijing.
+</font></td></tr>
+</TBODY></TABLE>
+
+</FONT></BODY>
+</HTML>
