@@ -13,7 +13,7 @@ module Queue
        ) where 
 
 -- import Data.List
-import Random
+-- import Random
 import System.Random
 import Data.Time.Clock
 
